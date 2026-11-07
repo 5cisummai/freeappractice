@@ -138,7 +138,7 @@
 </script>
 
 <PromptInput.Root
-	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-background pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
+	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
 	onSubmit={({ text, files }) => send(text, files)}
 	bind:attachments
 	accept={imageInputEnabled ? COACH_ATTACHMENT_ACCEPT : 'application/x-disabled'}
@@ -199,15 +199,14 @@
 					{#each ['physics-sim', 'study-plan'] as const as actionId (actionId)}
 						{@const Icon = coachActionIcons[actionId]}
 						{@const selected = selectedCoachActionIds.includes(actionId)}
+						{@const action = coachComposerActions.find((item) => item.id === actionId)}
 						<PromptInput.ActionMenuItem
 							class={cn('items-center gap-2 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
 							disabled={!sessionId || streaming}
 							onSelect={() => toggleCoachAction(actionId)}
 						>
 							<Icon class="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-							<span class="text-sm"
-								>{actionId === 'physics-sim' ? 'Create Simulation' : 'Study plan'}</span
-							>
+							<span class="text-sm">{action?.title}</span>
 						</PromptInput.ActionMenuItem>
 					{/each}
 				</PromptInput.ActionMenuContent>

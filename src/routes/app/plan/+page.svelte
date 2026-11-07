@@ -9,7 +9,7 @@
 	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-week-filled';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import ClockIcon from '@tabler/icons-svelte/icons/clock';
-	import ChevronRightIcon from '@tabler/icons-svelte/icons/chevron-right';
+	import ArrowRightIcon from '@tabler/icons-svelte/icons/arrow-right';
 
 	let { data, form }: PageProps = $props();
 	let submittingTaskId = $state<string | null>(null);
@@ -211,19 +211,19 @@
 
 										<div class="shrink-0">
 											{#if task.status === 'done'}
-												<Button variant="secondary" size="sm" class="rounded-full px-3" disabled>
-													Start
-													<ChevronRightIcon class="size-4" />
+												<Button variant="secondary" size="sm" class="px-3" disabled>
+													Start task
+													<ArrowRightIcon class="size-4" aria-hidden="true" />
 												</Button>
 											{:else if task.practiceHref}
 												<Button
 													href={task.practiceHref}
-													variant={active ? 'default' : 'secondary'}
+													variant={active ? 'default' : 'outline'}
 													size="sm"
-													class="rounded-full px-3"
+													class="px-3"
 												>
-													Start
-													<ChevronRightIcon class="size-4" />
+													Start task
+													<ArrowRightIcon class="size-4" aria-hidden="true" />
 												</Button>
 											{:else}
 												<form
@@ -243,13 +243,13 @@
 													<input type="hidden" name="taskId" value={task.id} />
 													<Button
 														type="submit"
-														variant={active ? 'default' : 'secondary'}
+														variant={active ? 'default' : 'outline'}
 														size="sm"
-														class="rounded-full px-3"
+														class="px-3"
 														disabled={submittingTaskId !== null}
 													>
-														Start
-														<ChevronRightIcon class="size-4" />
+														Start task
+														<ArrowRightIcon class="size-4" aria-hidden="true" />
 													</Button>
 												</form>
 											{/if}

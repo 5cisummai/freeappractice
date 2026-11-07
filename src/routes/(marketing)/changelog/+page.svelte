@@ -5,6 +5,28 @@
 
 	const changelog = [
 		{
+			version: '1.10.6',
+			date: 'November 6, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Home highlights today’s study plan task and gives you a button to start it',
+						'Browse AP courses and units from the homepage and preview sample questions on supported unit practice pages'
+					]
+				},
+				{
+					title: 'Improvements',
+					items: [
+						'Home shows course progress toward 20 answered questions per subject',
+						'Dark mode has a brighter blue accent and clearer separation between surfaces',
+						'Settings gives course selections a checkmark and stacks its navigation above the content on narrow screens',
+						'Home and Study Plan use matching task buttons, and the homepage Tutor and Coach demos use matching composer shadows'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.5',
 			date: 'November 3, 2026',
 			sections: [
@@ -1703,7 +1725,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: November 3, 2026"
+			meta="Last Updated: November 6, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

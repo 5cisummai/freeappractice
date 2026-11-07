@@ -4,12 +4,14 @@
 	import { onMount } from 'svelte';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
 	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import * as Popover from '#lib/components/ui/popover/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Switch } from '#lib/components/ui/switch/index.js';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
+	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import PageShell from '#lib/components/layout/page-shell.svelte';
 	import HintCard from '#lib/components/onboarding/hint-card.svelte';
 	import { authClient } from '#lib/auth/client.js';
@@ -21,8 +23,8 @@
 	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
 	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
-	const APP_VERSION = '1.10.5';
-	import CheckIcon from '@tabler/icons-svelte/icons/check-filled';
+	const APP_VERSION = '1.10.6';
+	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
@@ -208,22 +210,30 @@
 		bind:value={activeSection}
 		onValueChange={handleSectionChange}
 		orientation="vertical"
-		class="items-start gap-6 md:gap-8"
+		class="flex-col items-start gap-6 sm:flex-row md:gap-8"
 	>
 		<Tabs.List
 			variant="line"
-			class="h-fit w-36 shrink-0 sm:w-40 lg:w-44"
+			class="h-fit w-full shrink-0 sm:w-40 lg:w-44"
 			aria-label="Settings sections"
 		>
-			{#each SECTIONS as section (section.id)}
-				<Tabs.Trigger value={section.id} class="w-full">
-					{section.label}
-				</Tabs.Trigger>
-			{/each}
+			<Sidebar.Menu>
+				{#each SECTIONS as section (section.id)}
+					<Sidebar.MenuItem>
+						<Tabs.Trigger value={section.id} class="after:hidden">
+							{#snippet child({ props })}
+								<Sidebar.MenuButton {...props} isActive={activeSection === section.id}>
+									{section.label}
+								</Sidebar.MenuButton>
+							{/snippet}
+						</Tabs.Trigger>
+					</Sidebar.MenuItem>
+				{/each}
+			</Sidebar.Menu>
 		</Tabs.List>
 
 		<Tabs.Content value="practice" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<form method="POST" action="?/updateCourses" class="space-y-4 px-4 py-4">
 					<div class="space-y-0.5">
 						<p class="text-sm font-medium text-foreground">Classes</p>
@@ -250,20 +260,18 @@
 											/>
 											<label
 												for={id}
-												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:bg-primary peer-checked:[&_.course-icon]:text-primary-foreground peer-checked:[&_.selection-check]:opacity-100"
+												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:grayscale-0 peer-checked:[&_.selection-check]:opacity-100"
 											>
 												<span
-													class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors"
+													class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md grayscale {course.iconClass}"
 												>
 													<CourseIcon class="size-4" />
 												</span>
 												<span class="min-w-0 flex-1 leading-tight font-medium">{course.name}</span>
-												<span
-													class="selection-check flex size-4 shrink-0 items-center justify-center rounded-full border border-border text-primary opacity-0 transition-opacity"
+												<CheckIcon
+													class="selection-check size-4 shrink-0 text-primary opacity-0"
 													aria-hidden="true"
-												>
-													<CheckIcon class="size-3" />
-												</span>
+												/>
 											</label>
 										</div>
 									{/each}
@@ -294,11 +302,11 @@
 						onclick={() => (clearPracticeOpen = true)}>Clear</Button
 					>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="appearance" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Theme</p>
@@ -345,11 +353,11 @@
 						</DropdownMenu.Content>
 					</DropdownMenu.Root>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="privacy" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Analytics</p>
@@ -366,11 +374,11 @@
 							privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
 					/>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="super" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
 					<div class="min-w-0 space-y-0.5">
 						<p class="text-sm font-medium text-foreground">
@@ -485,11 +493,11 @@
 						>View memories</Button
 					>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="advanced" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">Reset onboarding</p>
@@ -535,11 +543,11 @@
 						Reset
 					</Button>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="account" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<form onsubmit={handleUpdateAccount} class="flex flex-col gap-4 px-4 py-4">
 					<div class="flex flex-col gap-2">
 						<Label for="name">Name</Label>
@@ -587,11 +595,11 @@
 						onclick={() => (deleteAccountOpen = true)}>Delete</Button
 					>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 
 		<Tabs.Content value="about" class="flex w-full min-w-0 flex-col gap-3">
-			<div class="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
 				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
 					<div class="flex min-w-0 flex-col gap-0.5">
 						<p class="text-sm font-medium text-foreground">App version</p>
@@ -624,7 +632,7 @@
 					<Button type="button" variant="outline" size="sm" href={resolve('changelog')}>View</Button
 					>
 				</div>
-			</div>
+			</Card.Root>
 		</Tabs.Content>
 	</Tabs.Root>
 </PageShell>

@@ -5,6 +5,7 @@ import { authorizeFeatureRequest, getPlanAccessForRequest } from '#lib/agent/acc
 import { getCurrentStudyPlan } from '#lib/agent/plans/store.server.js';
 import { timezoneFromCookies } from '#lib/users/timezone.js';
 import { resolvePracticeContext } from '#lib/users/practice-context.server.js';
+import { formatDayInTimeZone } from '#lib/dates/calendar-day.js';
 
 export const load: PageServerLoad = async ({ cookies, locals, parent: getParent }) => {
 	const userId = locals.userId!;
@@ -30,6 +31,7 @@ export const load: PageServerLoad = async ({ cookies, locals, parent: getParent 
 	]);
 	return {
 		...dashboard,
+		today: formatDayInTimeZone(new Date(), timeZone),
 		planAccess,
 		studyPlan: studyPlanAccess.allowed ? studyPlan : null,
 		canViewStudyPlan: studyPlanAccess.allowed,

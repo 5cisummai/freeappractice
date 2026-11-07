@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { footerNavGroups } from '#lib/site-nav.js';
-	import HalftoneBackground from '#lib/components/marketing/halftone-background.svelte';
 	import MailIcon from '@tabler/icons-svelte/icons/mail-filled';
 
 	const contactLinks = [
@@ -44,10 +43,6 @@
 </script>
 
 <div class="relative">
-	<div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-		<HalftoneBackground />
-	</div>
-
 	<footer
 		class="relative overflow-hidden border-t border-border/60 bg-card/80 shadow-md shadow-black/5 backdrop-blur-lg"
 	>

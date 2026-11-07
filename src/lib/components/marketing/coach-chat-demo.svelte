@@ -8,6 +8,10 @@
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
 	import { cn } from '#lib/utils.js';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
+	import AtomIcon from '@tabler/icons-svelte/icons/atom-2-filled';
+	import BookIcon from '@tabler/icons-svelte/icons/book-filled';
+	import CalendarIcon from '@tabler/icons-svelte/icons/calendar-event';
+	import ChartIcon from '@tabler/icons-svelte/icons/chart-pie-filled';
 	import BoltFilledIcon from '@tabler/icons-svelte/icons/bolt-filled';
 	import BrainIcon from '@tabler/icons-svelte/icons/brain';
 	import ChevronDownIcon from '@tabler/icons-svelte/icons/chevron-down';
@@ -15,6 +19,13 @@
 	import PlusFilledIcon from '@tabler/icons-svelte/icons/plus-filled';
 	import SearchIcon from '@tabler/icons-svelte/icons/search';
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
+
+	const suggestions = [
+		{ icon: BookIcon, title: 'Study next' },
+		{ icon: CalendarIcon, title: 'Study plan' },
+		{ icon: ChartIcon, title: 'Review progress' },
+		{ icon: AtomIcon, title: 'Physics sim' }
+	];
 
 	type CoachDemoTool = {
 		running: string;
@@ -465,9 +476,9 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 		{/if}
 
 		<div
-			class="rounded-[24px] border border-border/70 bg-background shadow-[0_4px_16px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.28)]"
+			class="flex min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] dark:border-border"
 		>
-			<div class="px-3 pt-3">
+			<div class="px-4">
 				<p
 					class="relative min-h-8 min-w-0 text-base leading-6 {composerText
 						? 'text-foreground'
@@ -481,39 +492,54 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 					{/if}
 				</p>
 			</div>
-			<div class="flex items-center justify-between gap-2 p-3 pt-2">
+			<div class="flex items-center justify-between gap-2 px-2">
 				<div class="flex items-center gap-1.5">
 					<span
-						class="flex size-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background p-0 text-muted-foreground"
+						class="flex size-8 shrink-0 items-center justify-center rounded-full p-0 text-foreground"
 						aria-hidden="true"
 					>
 						<PlusFilledIcon class="size-4" />
 					</span>
+				</div>
+				<div class="flex items-center gap-2">
 					<span
 						class="flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-sm text-muted-foreground"
 						aria-hidden="true"
 					>
 						<BoltFilledIcon class="size-3.5 shrink-0" />
-						<span>Quick</span>
+						<span>Flash</span>
 						<ChevronDownIcon class="size-3.5 shrink-0 opacity-60" />
 					</span>
+					<span
+						class={cn(
+							'flex size-8 shrink-0 items-center justify-center rounded-full p-0 transition-transform',
+							canSend || composerBusy
+								? SUPER_GRADIENT_BUTTON_CLASS
+								: 'bg-muted text-muted-foreground',
+							sendPressed && 'scale-95'
+						)}
+					>
+						{#if composerBusy}
+							<SquareIcon class="size-4" />
+						{:else}
+							<ArrowUpIcon class="size-4" />
+						{/if}
+					</span>
 				</div>
-				<span
-					class={cn(
-						'flex size-8 shrink-0 items-center justify-center rounded-full p-0 transition-transform',
-						canSend || composerBusy
-							? SUPER_GRADIENT_BUTTON_CLASS
-							: 'bg-muted text-muted-foreground',
-						sendPressed && 'scale-95'
-					)}
-				>
-					{#if composerBusy}
-						<SquareIcon class="size-4" />
-					{:else}
-						<ArrowUpIcon class="size-4" />
-					{/if}
-				</span>
 			</div>
 		</div>
+		{#if emptyChat}
+			<ul class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2">
+				{#each suggestions as suggestion (suggestion.title)}
+					{@const Icon = suggestion.icon}
+					<li
+						class="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm leading-5 text-foreground/85"
+					>
+						<Icon class="size-4 shrink-0 text-muted-foreground" />
+						{suggestion.title}
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</div>
 </div>
