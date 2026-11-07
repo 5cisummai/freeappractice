@@ -134,6 +134,7 @@ Commonly needed for full functionality:
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_REGION` / `AWS_S3_BUCKET` | Optional legacy S3 import tooling                                                                 |
 | `AWS_SESSION_TOKEN`                                                            | Optional temporary/assumed-role credentials                                                       |
 | `PUBLIC_BASE_URL`                                                              | Canonical site URL                                                                                |
+| `PUBLIC_DESMOS_API_KEY`                                                        | In-app Desmos calculator (runtime public env; hostname-scoped key from desmos.com/my-api)         |
 | `GITHUB_BUG_REPORT_TOKEN`                                                      | GitHub Issues API for in-app bug reports                                                          |
 | `CRON_SECRET`                                                                  | Secures Vercel cron routes (`Authorization: Bearer …`); required in production for scheduled jobs |
 
