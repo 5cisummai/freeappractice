@@ -41,7 +41,14 @@ export type ExamBlueprintResult =
 	| { ok: false; reason: string };
 
 type CatalogExamSection = UnifiedCourse['official']['exam']['sections'][number];
-type CatalogExamPart = NonNullable<CatalogExamSection['parts']>[number];
+type CatalogExamPart = {
+	id: string;
+	questionCount?: number;
+	durationMinutes?: number;
+	weightPercent?: number;
+	calculatorPolicy?: string;
+	notes?: string[];
+};
 
 const UNSUPPORTED_SECTION_IDS = new Set(['create-performance-task']);
 
@@ -130,7 +137,7 @@ function resolvePartPacing(
 		if (durations.some((value) => value === null)) {
 			return { error: `Section "${section.id}" has calculator parts without durations.` };
 		}
-		const total = durations.reduce((sum, value) => sum + value!, 0);
+		const total = durations.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 		if (
 			'durationMinutes' in section &&
 			typeof section.durationMinutes === 'number' &&
@@ -192,7 +199,7 @@ function parseSection(
 	let parts: ExamBlueprintPart[] | undefined;
 	let partPacing: ExamBlueprintPartPacing | undefined;
 	if ('parts' in section && Array.isArray(section.parts) && section.parts.length > 0) {
-		const catalogParts = section.parts;
+		const catalogParts = section.parts as CatalogExamPart[];
 		const pacingResult = resolvePartPacing(section, catalogParts);
 		if ('error' in pacingResult) return pacingResult;
 		partPacing = pacingResult.pacing;

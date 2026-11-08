@@ -458,7 +458,8 @@ export async function findActiveQuestionsForQuiz(input: {
 		excludeQuestionIds.length ? notInArray(mcqQuestions.questionId, excludeQuestionIds) : undefined
 	);
 	const requested = Math.max(1, Math.floor(input.limit ?? 50));
-	const windowSize = Math.min(200, requested * 4);
+	// Exam-sized draws need a wider sample window so stimulus sets still leave enough items.
+	const windowSize = Math.min(400, Math.max(requested * 4, requested + 40));
 	const pivot = Math.random();
 	const afterRows = await db
 		.select()
