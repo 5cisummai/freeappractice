@@ -8,6 +8,10 @@ export const sentryIgnoreErrors: Array<string | RegExp> = [
 	"undefined is not an object (evaluating 'window.webkit.messageHandlers')",
 	// Vercel AI SDK delay() when a stream/request abort hits a retry wait.
 	'Delay was aborted',
+	// Node.js / undici default AbortError from abort() with no reason.
+	// Coach streamTimeout.abort() and Vercel request disconnects use this.
+	// Do not ignore browser "The operation was aborted".
+	'This operation was aborted',
 	// Firefox-for-iOS / WebKit reader-mode injects `__firefox__` into the page.
 	"Can't find variable: __firefox__",
 	// Same injected global on Gecko (`ReferenceError: __firefox__ is not defined`).

@@ -476,7 +476,12 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			await finalizeConversationMessage(userId, assistantMessageId, {
 				content: pendingAssistant?.content ?? '',
 				parts: pendingAssistant?.parts ?? [],
-				status: pendingAssistant ? 'complete' : 'error'
+				status:
+					error instanceof Error && error.name === 'AbortError'
+						? 'aborted'
+						: pendingAssistant
+							? 'complete'
+							: 'error'
 			}).catch((finalizeError) =>
 				logger.warn('Failed to finalize Super Agent error message', { finalizeError })
 			);
@@ -486,6 +491,9 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 			return Response.json({ error: error.message }, { status: 400 });
 		if (error instanceof ConversationAccessError) {
 			return Response.json({ error: error.message }, { status: error.status });
+		}
+		if (error instanceof Error && error.name === 'AbortError') {
+			return new Response(null, { status: event.request.signal.aborted ? 499 : 408 });
 		}
 		if (messages.some((message) => message.parts.some((part) => part.type === 'file'))) {
 			logger.error('Coach attachment request failed', {
