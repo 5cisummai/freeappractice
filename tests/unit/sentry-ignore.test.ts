@@ -58,6 +58,13 @@ describe('isIgnoredSentryError', () => {
 		);
 	});
 
+	it('does not ignore Safari localStorage SecurityError', () => {
+		expect(
+			isIgnoredSentryError(new DOMException('The operation is insecure.', 'SecurityError'))
+		).toBe(false);
+		expect(isIgnoredSentryError('SecurityError: The operation is insecure.')).toBe(false);
+	});
+
 	it('drops Firefox-for-iOS __firefox__ injection noise in Error and string forms', () => {
 		expect(isIgnoredSentryError(new ReferenceError("Can't find variable: __firefox__"))).toBe(true);
 		expect(isIgnoredSentryError("ReferenceError: Can't find variable: __firefox__")).toBe(true);
