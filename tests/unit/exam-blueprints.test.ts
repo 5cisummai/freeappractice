@@ -43,11 +43,7 @@ describe('loadExamBlueprint', () => {
 			weightPercent: 55
 		});
 		expect(frq.notes).toContain('Includes a 15-minute reading period.');
-		expect(result.blueprint.taskQuotas).toEqual([
-			'synthesis',
-			'rhetorical-analysis',
-			'argument'
-		]);
+		expect(result.blueprint.taskQuotas).toEqual(['synthesis', 'rhetorical-analysis', 'argument']);
 	});
 
 	it('rejects unknown courses', () => {

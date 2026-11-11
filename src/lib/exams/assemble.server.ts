@@ -95,10 +95,7 @@ function itemId(sectionId: string, index: number): string {
 	return `${sectionId}-${String(index + 1).padStart(3, '0')}`;
 }
 
-function toExamSection(
-	blueprint: ExamBlueprintSection,
-	questionIds: string[]
-): ExamSection {
+function toExamSection(blueprint: ExamBlueprintSection, questionIds: string[]): ExamSection {
 	return {
 		id: blueprint.id,
 		kind: blueprint.kind,

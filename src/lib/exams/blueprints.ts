@@ -37,8 +37,7 @@ export type ExamBlueprint = {
 };
 
 export type ExamBlueprintResult =
-	| { ok: true; blueprint: ExamBlueprint }
-	| { ok: false; reason: string };
+	{ ok: true; blueprint: ExamBlueprint } | { ok: false; reason: string };
 
 type CatalogExamSection = UnifiedCourse['official']['exam']['sections'][number];
 type CatalogExamPart = {
@@ -81,12 +80,7 @@ function sectionKind(sectionId: string): ExamBlueprintSectionKind | null {
 
 function isTaskControlled(course: UnifiedCourse): boolean {
 	const frq = course.generation.frq;
-	return (
-		typeof frq === 'object' &&
-		frq !== null &&
-		'control' in frq &&
-		frq.control === 'task'
-	);
+	return typeof frq === 'object' && frq !== null && 'control' in frq && frq.control === 'task';
 }
 
 function collectUnsupportedQuestionTypes(sections: CatalogExamSection[]): string | null {
@@ -193,7 +187,9 @@ function parseSection(
 	if ('error' in weightPercent) return weightPercent;
 
 	const questionTypes =
-		'questionTypes' in section && Array.isArray(section.questionTypes) ? [...section.questionTypes] : [];
+		'questionTypes' in section && Array.isArray(section.questionTypes)
+			? [...section.questionTypes]
+			: [];
 	const notes = 'notes' in section && Array.isArray(section.notes) ? [...section.notes] : undefined;
 
 	let parts: ExamBlueprintPart[] | undefined;
