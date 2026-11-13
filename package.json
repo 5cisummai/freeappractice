@@ -23,6 +23,7 @@
 		"db:generate": "drizzle-kit generate --config=drizzle.config.ts",
 		"db:apply": "bun scripts/apply-neon-migrations.ts",
 		"db:backfill-retire-bad-quality": "bun scripts/backfill-retire-bad-quality-questions.ts",
+		"db:backfill-mcq-option-shuffle": "bun scripts/backfill-mcq-option-shuffle.ts",
 		"db:sync-ap-art-history": "bun scripts/ap-art-history/sync-works.ts",
 		"auth:cleanup-unverified": "bun scripts/cleanup-unverified-users.ts",
 		"classroom:access": "bun --preload ./scripts/bun-sveltekit-env-preload.ts scripts/manage-classroom-access.ts",
