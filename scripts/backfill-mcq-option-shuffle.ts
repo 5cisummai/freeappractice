@@ -125,9 +125,7 @@ export async function backfillMcqOptionShuffle(): Promise<void> {
 
 		for (const row of batch) {
 			const data =
-				row.data && typeof row.data === 'object' && !Array.isArray(row.data)
-					? row.data
-					: null;
+				row.data && typeof row.data === 'object' && !Array.isArray(row.data) ? row.data : null;
 			if (!data) {
 				skipped += 1;
 				continue;

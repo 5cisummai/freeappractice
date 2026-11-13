@@ -35,10 +35,7 @@ describe('shuffleMcqOptions', () => {
 
 	it('permutes options, correctAnswer, choiceExplanations, and explanation letters', () => {
 		// Fisher–Yates with this stream yields sourceOrder [B, A, D, C]
-		const shuffled = shuffleMcqOptions(
-			base,
-			sequenceRandom([0.625, 0.8333333333333334, 0.25])
-		);
+		const shuffled = shuffleMcqOptions(base, sequenceRandom([0.625, 0.8333333333333334, 0.25]));
 
 		expect(shuffled.optionA).toBe('bravo');
 		expect(shuffled.optionB).toBe('alpha');
@@ -51,9 +48,7 @@ describe('shuffleMcqOptions', () => {
 			C: 'why delta',
 			D: 'why charlie'
 		});
-		expect(shuffled.explanation).toBe(
-			'The correct answer is B because alpha. Option A is wrong.'
-		);
+		expect(shuffled.explanation).toBe('The correct answer is B because alpha. Option A is wrong.');
 		expect(shuffled.optionsShuffled).toBe(true);
 		expect(shuffled.question).toBe('Pick one.');
 	});
@@ -79,10 +74,7 @@ describe('shuffleMcqOptions', () => {
 
 describe('shuffleLetters', () => {
 	it('returns a permutation of A–D', () => {
-		const order = shuffleLetters(
-			undefined,
-			sequenceRandom([0.625, 0.8333333333333334, 0.25])
-		);
+		const order = shuffleLetters(undefined, sequenceRandom([0.625, 0.8333333333333334, 0.25]));
 		expect(order).toEqual(['B', 'A', 'D', 'C']);
 		expect(new Set(order).size).toBe(4);
 	});
@@ -90,9 +82,9 @@ describe('shuffleLetters', () => {
 
 describe('remapOptionLettersInText', () => {
 	it('remaps letters without intermediate collisions', () => {
-		expect(
-			remapOptionLettersInText('A then B', { A: 'B', B: 'A', C: 'C', D: 'D' })
-		).toBe('B then A');
+		expect(remapOptionLettersInText('A then B', { A: 'B', B: 'A', C: 'C', D: 'D' })).toBe(
+			'B then A'
+		);
 	});
 });
 

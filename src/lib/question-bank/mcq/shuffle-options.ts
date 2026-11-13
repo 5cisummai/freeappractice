@@ -20,10 +20,7 @@ function isOptionLetter(value: string): value is McqOptionLetter {
 	return value === 'A' || value === 'B' || value === 'C' || value === 'D';
 }
 
-function optionText(
-	input: McqShufflableFields,
-	letter: McqOptionLetter
-): string {
+function optionText(input: McqShufflableFields, letter: McqOptionLetter): string {
 	switch (letter) {
 		case 'A':
 			return input.optionA;
