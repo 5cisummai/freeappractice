@@ -49,13 +49,13 @@ For each issue, open it with `get_issue` when attachments/description are needed
 
 Classify:
 
-| Evidence | Action |
-| -------- | ------ |
-| Any linked PR is **MERGED** into the default branch, or the fix commit is on `origin/main` | Set status to **Done** |
-| Issue is explicitly superseded and a duplicate of a Done/merged issue | Set **Duplicate** (or cancel only if Linear workflow already uses Canceled for that) and link `duplicateOf` when possible |
-| Linked PRs are **OPEN** / draft, or work is still unfinished | Leave status unchanged |
-| No linked PR and no clear main evidence | Leave unchanged; list under **Needs review** |
-| Work abandoned with user confirmation only | Do not auto-cancel |
+| Evidence                                                                                   | Action                                                                                                                    |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Any linked PR is **MERGED** into the default branch, or the fix commit is on `origin/main` | Set status to **Done**                                                                                                    |
+| Issue is explicitly superseded and a duplicate of a Done/merged issue                      | Set **Duplicate** (or cancel only if Linear workflow already uses Canceled for that) and link `duplicateOf` when possible |
+| Linked PRs are **OPEN** / draft, or work is still unfinished                               | Leave status unchanged                                                                                                    |
+| No linked PR and no clear main evidence                                                    | Leave unchanged; list under **Needs review**                                                                              |
+| Work abandoned with user confirmation only                                                 | Do not auto-cancel                                                                                                        |
 
 Rules:
 
