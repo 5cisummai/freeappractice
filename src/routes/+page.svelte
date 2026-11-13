@@ -11,7 +11,6 @@
 	import BottomCtaSection from '#lib/components/marketing/bottom-cta-section.svelte';
 	import LandingHero from '#lib/components/marketing/landing-hero.svelte';
 	import UnlimitedSection from '#lib/components/marketing/unlimited-section.svelte';
-	import BrowseCoursesSection from '#lib/components/marketing/browse-courses-section.svelte';
 	import SuperSection from '#lib/components/marketing/super-section.svelte';
 	import StudyTeamSection from '#lib/components/marketing/study-team-section.svelte';
 	import PricingSection from '#lib/components/marketing/pricing-section.svelte';
@@ -334,8 +333,6 @@
 			class="mx-auto w-full max-w-7xl space-y-20 px-5 pt-24 pb-12 sm:px-8 lg:space-y-24 lg:px-10 lg:pt-32 lg:pb-16"
 		>
 			<UnlimitedSection showTutor={data.assistantFeaturesEnabled} />
-
-			<BrowseCoursesSection />
 
 			<SuperSection />
 
