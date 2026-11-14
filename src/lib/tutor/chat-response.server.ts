@@ -37,9 +37,10 @@ export async function createTutorStreamResponse(input: {
 		});
 	} catch (error) {
 		const aborted = signal.aborted || (error instanceof Error && error.name === 'AbortError');
-		if (!aborted) {
-			logger.error(`[ai] ${input.operation} failed`, { model: TUTOR_MODEL, error });
+		if (aborted) {
+			return new Response(null, { status: 408 });
 		}
+		logger.error(`[ai] ${input.operation} failed`, { model: TUTOR_MODEL, error });
 		throw error;
 	}
 }

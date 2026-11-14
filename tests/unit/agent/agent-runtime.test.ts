@@ -96,4 +96,57 @@ describe('Coach stream startup', () => {
 		expect(mocks.releaseLock).toHaveBeenCalledWith({ key: 'lock', token: 'token' });
 		expect(vi.getTimerCount()).toBe(0);
 	});
+
+	it('returns 408 and marks the turn aborted when stream init is cancelled', async () => {
+		mocks.startStream.mockRejectedValueOnce(
+			new DOMException('This operation was aborted', 'AbortError')
+		);
+
+		const response = await createAgentStreamResponse({
+			event: {
+				request: new Request('https://app.test/api/super/agent'),
+				locals: {},
+				cookies: { get: () => undefined }
+			},
+			userId: 'user-1',
+			sessionId: 'session-1',
+			accessReason: 'subscription',
+			context: { surface: 'coach', page: 'coach' },
+			messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }]
+		} as unknown as Parameters<typeof createAgentStreamResponse>[0]);
+
+		expect(response.status).toBe(408);
+		expect(mocks.finalize).toHaveBeenCalledWith('user-1', 'message-1', {
+			content: '',
+			parts: [],
+			status: 'aborted'
+		});
+		expect(mocks.releaseLock).toHaveBeenCalledWith({ key: 'lock', token: 'token' });
+	});
+
+	it('returns 499 when the client disconnects during stream init', async () => {
+		const controller = new AbortController();
+		controller.abort();
+		mocks.startStream.mockRejectedValueOnce(controller.signal.reason);
+
+		const response = await createAgentStreamResponse({
+			event: {
+				request: new Request('https://app.test/api/super/agent', { signal: controller.signal }),
+				locals: {},
+				cookies: { get: () => undefined }
+			},
+			userId: 'user-1',
+			sessionId: 'session-1',
+			accessReason: 'subscription',
+			context: { surface: 'coach', page: 'coach' },
+			messages: [{ role: 'user', parts: [{ type: 'text', text: 'Help me study' }] }]
+		} as unknown as Parameters<typeof createAgentStreamResponse>[0]);
+
+		expect(response.status).toBe(499);
+		expect(mocks.finalize).toHaveBeenCalledWith('user-1', 'message-1', {
+			content: '',
+			parts: [],
+			status: 'aborted'
+		});
+	});
 });

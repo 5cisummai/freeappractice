@@ -37,6 +37,7 @@ describe('isIgnoredSentryError', () => {
 			"undefined is not an object (evaluating 'window.webkit.messageHandlers')"
 		);
 		expect(sentryIgnoreErrors).toContain('Delay was aborted');
+		expect(sentryIgnoreErrors).toContain('This operation was aborted');
 		expect(sentryIgnoreErrors).toContain("Can't find variable: __firefox__");
 		expect(sentryIgnoreErrors).toContain('__firefox__ is not defined');
 		expect(sentryIgnoreErrors).toContain(
@@ -52,10 +53,20 @@ describe('isIgnoredSentryError', () => {
 		expect(isIgnoredSentryError('AbortError: Delay was aborted')).toBe(true);
 	});
 
+	it('drops the Node default abort() reason', () => {
+		expect(isIgnoredSentryError(new DOMException('This operation was aborted', 'AbortError'))).toBe(
+			true
+		);
+		expect(isIgnoredSentryError('AbortError: This operation was aborted')).toBe(true);
+	});
+
 	it('keeps other AbortErrors', () => {
 		expect(isIgnoredSentryError(new DOMException('The operation was aborted', 'AbortError'))).toBe(
 			false
 		);
+		expect(
+			isIgnoredSentryError(new DOMException('The user aborted a request.', 'AbortError'))
+		).toBe(false);
 	});
 
 	it('drops Firefox-for-iOS __firefox__ injection noise in Error and string forms', () => {

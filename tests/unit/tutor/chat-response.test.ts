@@ -42,4 +42,36 @@ describe('createTutorStreamResponse', () => {
 		);
 		expect(toUIMessageStreamMock).toHaveBeenCalledWith({ stream: uiStream });
 	});
+
+	it('returns 408 when the request is aborted instead of throwing', async () => {
+		const controller = new AbortController();
+		controller.abort();
+		convertToModelMessagesMock.mockRejectedValueOnce(controller.signal.reason);
+
+		const response = await createTutorStreamResponse({
+			operation: 'chat',
+			system: 'system prompt',
+			messages: [
+				{ id: '1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Help' }] }
+			],
+			signal: controller.signal
+		});
+
+		expect(response.status).toBe(408);
+	});
+
+	it('still throws non-abort failures', async () => {
+		convertToModelMessagesMock.mockRejectedValueOnce(new Error('provider down'));
+
+		await expect(
+			createTutorStreamResponse({
+				operation: 'chat',
+				system: 'system prompt',
+				messages: [
+					{ id: '1', role: 'user' as const, parts: [{ type: 'text' as const, text: 'Help' }] }
+				],
+				signal: new AbortController().signal
+			})
+		).rejects.toThrow('provider down');
+	});
 });
