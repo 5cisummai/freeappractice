@@ -41,6 +41,20 @@ export function isSvelteKitMissingComponentError(error: unknown): boolean {
 	);
 }
 
+/**
+ * V8/Chrome JavaScript parser hit EOF. Distinct from JSON.parse
+ * (`Unexpected end of JSON input`). Typical cause: a truncated or stale
+ * `_app/immutable` chunk during hydration or navigation.
+ *
+ * Match the exact message. `includes('Unexpected end of input')` would also
+ * swallow JSON.parse failures.
+ */
+export function isTruncatedJavaScriptParseError(error: unknown): boolean {
+	const message = sentryErrorMessage(error);
+	const normalized = message.replace(/^SyntaxError:\s*/u, '').trim();
+	return normalized === 'Unexpected end of input';
+}
+
 const sentryEnabled = !dev && !building;
 
 export const sentryOptions = {

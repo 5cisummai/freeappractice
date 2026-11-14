@@ -5,6 +5,7 @@ import { sentryEnabled, sentryOptions } from '#lib/sentry-ignore.js';
 import {
 	isIgnoredSentryError,
 	isSvelteKitMissingComponentError,
+	isTruncatedJavaScriptParseError,
 	sentryErrorMessage
 } from '#lib/sentry-ignore.js';
 
@@ -22,7 +23,11 @@ function isDynamicImportFailure(error: unknown): boolean {
 }
 
 function isRecoverableStaleClientError(error: unknown): boolean {
-	return isDynamicImportFailure(error) || isSvelteKitMissingComponentError(error);
+	return (
+		isDynamicImportFailure(error) ||
+		isSvelteKitMissingComponentError(error) ||
+		isTruncatedJavaScriptParseError(error)
+	);
 }
 
 function hasRecentChunkReload(): boolean {
