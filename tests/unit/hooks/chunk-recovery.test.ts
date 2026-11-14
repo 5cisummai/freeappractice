@@ -112,6 +112,30 @@ describe('client chunk recovery', () => {
 		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
 		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
 	});
+
+	it('reloads before reporting truncated JavaScript parse errors', async () => {
+		await handle(new SyntaxError('Unexpected end of input'));
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(mocks.captureSentry).not.toHaveBeenCalled();
+		expect(mocks.capturePostHog).not.toHaveBeenCalled();
+	});
+
+	it('reports a repeated truncated JavaScript parse error inside the reload window', async () => {
+		mocks.getItem.mockReturnValue(String(Date.now()));
+		const error = new SyntaxError('Unexpected end of input');
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
+
+	it('reports JSON.parse Unexpected end of JSON input without reloading', async () => {
+		const error = new SyntaxError('Unexpected end of JSON input');
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
 });
 
 describe('Sentry beforeSend stale-client recovery', () => {
@@ -134,6 +158,20 @@ describe('Sentry beforeSend stale-client recovery', () => {
 
 	it('passes through unrelated errors', async () => {
 		const error = new TypeError('something else broke');
+		const event = { message: error.message };
+		const result = await runBeforeSend(error, event);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(result).toBe(event);
+	});
+
+	it('drops truncated JavaScript parse errors only when a one-shot reload starts', async () => {
+		const result = await runBeforeSend(new SyntaxError('Unexpected end of input'));
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(result).toBeNull();
+	});
+
+	it('still sends JSON.parse Unexpected end of JSON input', async () => {
+		const error = new SyntaxError('Unexpected end of JSON input');
 		const event = { message: error.message };
 		const result = await runBeforeSend(error, event);
 		expect(mocks.reload).not.toHaveBeenCalled();

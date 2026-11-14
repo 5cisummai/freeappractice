@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	isIgnoredSentryError,
 	isSvelteKitMissingComponentError,
+	isTruncatedJavaScriptParseError,
 	sentryIgnoreErrors
 } from '#lib/sentry-ignore.js';
 
@@ -128,5 +129,29 @@ describe('isSvelteKitMissingComponentError', () => {
 		expect(
 			isSvelteKitMissingComponentError(new TypeError('Cannot read properties of undefined'))
 		).toBe(false);
+	});
+});
+
+describe('isTruncatedJavaScriptParseError', () => {
+	it('matches the exact V8 JavaScript-parse message in Error and string forms', () => {
+		expect(isTruncatedJavaScriptParseError(new SyntaxError('Unexpected end of input'))).toBe(true);
+		expect(isTruncatedJavaScriptParseError('SyntaxError: Unexpected end of input')).toBe(true);
+	});
+
+	it('does not treat the crash as ignoreErrors noise', () => {
+		expect(isIgnoredSentryError(new SyntaxError('Unexpected end of input'))).toBe(false);
+	});
+
+	it('keeps JSON.parse EOF and other SyntaxErrors', () => {
+		expect(isTruncatedJavaScriptParseError(new SyntaxError('Unexpected end of JSON input'))).toBe(
+			false
+		);
+		expect(isTruncatedJavaScriptParseError('SyntaxError: Unexpected end of JSON input')).toBe(
+			false
+		);
+		expect(isTruncatedJavaScriptParseError(new SyntaxError('Unexpected token < in JSON'))).toBe(
+			false
+		);
+		expect(isTruncatedJavaScriptParseError(new SyntaxError('Unexpected eof'))).toBe(false);
 	});
 });
