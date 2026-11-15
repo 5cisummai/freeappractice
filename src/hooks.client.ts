@@ -4,7 +4,7 @@ import { initPostHogAnalytics, capturePostHogException } from '#lib/client/posth
 import { sentryEnabled, sentryOptions } from '#lib/sentry-ignore.js';
 import {
 	isIgnoredSentryError,
-	isSvelteKitMissingComponentError,
+	isSvelteKitMissingRouteNodeError,
 	sentryErrorMessage
 } from '#lib/sentry-ignore.js';
 
@@ -22,7 +22,7 @@ function isDynamicImportFailure(error: unknown): boolean {
 }
 
 function isRecoverableStaleClientError(error: unknown): boolean {
-	return isDynamicImportFailure(error) || isSvelteKitMissingComponentError(error);
+	return isDynamicImportFailure(error) || isSvelteKitMissingRouteNodeError(error);
 }
 
 function hasRecentChunkReload(): boolean {

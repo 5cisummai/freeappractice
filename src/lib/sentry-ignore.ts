@@ -32,12 +32,27 @@ export function isIgnoredSentryError(error: unknown): boolean {
 	);
 }
 
-/** SvelteKit reads `.component` on an undefined route node during a stale or raced navigation. */
-export function isSvelteKitMissingComponentError(error: unknown): boolean {
+/**
+ * SvelteKit `load_node` / root render reads `.component` or `.universal` on an
+ * undefined route node after a stale client or hydration race.
+ *
+ * Chromium: `reading 'universal'`. Safari/JSC minifies the identifier, e.g.
+ * `evaluating 's.universal'`. Do not treat these as ignoreErrors noise.
+ */
+const svelteKitMissingRouteNodeMatchers: Array<string | RegExp> = (
+	['component', 'universal'] as const
+).flatMap((property) => [
+	`Cannot read properties of undefined (reading '${property}')`,
+	`Cannot read property '${property}' of undefined`,
+	new RegExp(`undefined is not an object \\(evaluating '[^']+\\.${property}'\\)`)
+]);
+
+export function isSvelteKitMissingRouteNodeError(error: unknown): boolean {
 	const message = sentryErrorMessage(error);
-	return (
-		message.includes("Cannot read properties of undefined (reading 'component')") ||
-		message.includes("Cannot read property 'component' of undefined")
+	if (!message) return false;
+
+	return svelteKitMissingRouteNodeMatchers.some((pattern) =>
+		typeof pattern === 'string' ? message.includes(pattern) : pattern.test(message)
 	);
 }
 
