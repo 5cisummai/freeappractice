@@ -781,7 +781,11 @@ export async function recordHumanDecision(opts: {
 	const now = new Date();
 	await ensureQuestionQuality(opts.questionId);
 	const existing = await getQuestionQuality(opts.questionId);
-	if (existing?.state === 'final' && existing.finalVerdict === opts.verdict) {
+	if (
+		existing?.state === 'final' &&
+		existing.finalVerdict === opts.verdict &&
+		!existing.needsHumanReview
+	) {
 		// Reapplying a legacy bad decision must also retire its serving row.
 		if (opts.verdict === 'bad') {
 			await updateQuestionQuality(opts.questionId, { finalVerdict: 'bad' });
@@ -805,6 +809,7 @@ export async function recordHumanDecision(opts: {
 		finalizedAt: now,
 		state: nextState,
 		needsHumanReview: false,
+		humanReviewReason: null,
 		blindHumanReview: false
 	});
 	if (!result.matchedCount) throw new Error('Question quality record not found');

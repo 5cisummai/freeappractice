@@ -15,7 +15,7 @@ vi.mock('#lib/agent/personalization/profile.server.js', () => ({
 	markSuperAccessStarted: mocks.markSuperAccessStarted
 }));
 
-import { getPlanAccess } from '#lib/billing/subscriptions.server.js';
+import { getAdminUserSuperAccess, getPlanAccess } from '#lib/billing/subscriptions.server.js';
 
 function selectBuilder(result: unknown[]) {
 	const builder: any = {
@@ -89,5 +89,37 @@ describe('direct Drizzle plan access', () => {
 			[]
 		);
 		expect(await getPlanAccess('student-1', now)).toMatchObject({ plan: 'free' });
+	});
+
+	it.each([
+		{ status: 'active', billingIssue: 'payment_failed', grant: false, reason: null },
+		{ status: 'trialing', billingIssue: null, grant: false, reason: null },
+		{ status: 'past_due', graceAge: 7, grant: false, reason: null },
+		{ status: 'past_due', graceAge: 6, grant: false, reason: 'past_due_grace' },
+		{ status: 'active', billingIssue: null, grant: true, reason: 'admin_grant' }
+	])('applies the same policy to user and admin access: $status ($reason)', async (scenario) => {
+		const userId = 'student-1';
+		const grants = scenario.grant ? [{ userId }] : [];
+		const billing = [
+			{
+				userId,
+				status: scenario.status,
+				billingIssue: scenario.billingIssue ?? null,
+				superEndedAt: null,
+				periodEnd: new Date('2026-09-01T00:00:00Z'),
+				pastDueSince: scenario.graceAge
+					? new Date(now.getTime() - scenario.graceAge * 86_400_000)
+					: null
+			}
+		];
+
+		mocks.selectResults.push(billing, grants, grants, billing);
+		const userAccess = await getPlanAccess(userId, now);
+		const adminAccess = await getAdminUserSuperAccess([userId], now);
+		expect(userAccess).toEqual({
+			plan: scenario.reason ? 'super' : 'free',
+			accessReason: scenario.reason
+		});
+		expect(adminAccess.get(userId)).toEqual({ ...userAccess, hasAdminGrant: scenario.grant });
 	});
 });

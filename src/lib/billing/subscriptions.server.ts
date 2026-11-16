@@ -74,8 +74,43 @@ export type SuperBillingView = {
 	hasCustomer: boolean;
 };
 
-function superPlanAccess(reason: Exclude<SuperAccessReason, null>): PlanAccess {
-	return { plan: 'super', accessReason: reason };
+type BillingAccessRow = Pick<
+	typeof superBillingAccess.$inferSelect,
+	'status' | 'superEndedAt' | 'billingIssue' | 'periodEnd' | 'pastDueSince'
+>;
+
+function resolvePlanAccess(
+	hasBetaClaim: boolean,
+	hasAdminGrant: boolean,
+	billing: BillingAccessRow[],
+	now: Date
+): PlanAccess {
+	if (hasBetaClaim) return { plan: 'super', accessReason: 'free_beta' };
+	if (hasAdminGrant) return { plan: 'super', accessReason: 'admin_grant' };
+	if (
+		billing.some(
+			(subscription) =>
+				subscription.status === 'active' &&
+				!subscription.superEndedAt &&
+				!subscription.billingIssue &&
+				subscription.periodEnd &&
+				new Date(subscription.periodEnd) > now
+		)
+	) {
+		return { plan: 'super', accessReason: 'subscription' };
+	}
+	if (
+		billing.some(
+			(subscription) =>
+				subscription.status === 'past_due' &&
+				!subscription.superEndedAt &&
+				subscription.pastDueSince &&
+				now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
+		)
+	) {
+		return { plan: 'super', accessReason: 'past_due_grace' };
+	}
+	return FREE_PLAN_ACCESS;
 }
 
 /** Resolve the user's plan from the billing mirror, grants, and free-beta claim. */
@@ -88,7 +123,7 @@ export async function getPlanAccess(userId: string, now = new Date()): Promise<P
 			.limit(1);
 		if (claimed) {
 			await markSuperAccessStarted(userId, now);
-			return superPlanAccess('free_beta');
+			return resolvePlanAccess(true, false, [], now);
 		}
 	}
 
@@ -112,38 +147,9 @@ export async function getPlanAccess(userId: string, now = new Date()): Promise<P
 			)
 			.limit(1)
 	]);
-	const grant = grants[0];
-
-	if (grant) {
-		await markSuperAccessStarted(userId, now);
-		return superPlanAccess('admin_grant');
-	}
-	if (
-		billing.some(
-			(subscription) =>
-				subscription.status === 'active' &&
-				!subscription.superEndedAt &&
-				!subscription.billingIssue &&
-				subscription.periodEnd &&
-				new Date(subscription.periodEnd) > now
-		)
-	) {
-		await markSuperAccessStarted(userId, now);
-		return superPlanAccess('subscription');
-	}
-	if (
-		billing.some(
-			(subscription) =>
-				subscription.status === 'past_due' &&
-				!subscription.superEndedAt &&
-				subscription.pastDueSince &&
-				now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
-		)
-	) {
-		await markSuperAccessStarted(userId, now);
-		return superPlanAccess('past_due_grace');
-	}
-	return FREE_PLAN_ACCESS;
+	const access = resolvePlanAccess(false, grants.length > 0, billing, now);
+	if (access.plan === 'super') await markSuperAccessStarted(userId, now);
+	return access;
 }
 
 export type AdminUserSuperAccess = {
@@ -205,37 +211,13 @@ export async function getAdminUserSuperAccess(
 
 	for (const userId of userIds) {
 		const hasAdminGrant = grantedUsers.has(userId);
-		let accessReason: SuperAccessReason = null;
-		if (claimedUsers.has(userId)) accessReason = 'free_beta';
-		else if (hasAdminGrant) accessReason = 'admin_grant';
-		else {
-			const subscriptions = billingByUser.get(userId) ?? [];
-			if (
-				subscriptions.some(
-					(subscription) =>
-						subscription.status === 'active' &&
-						!subscription.superEndedAt &&
-						!subscription.billingIssue &&
-						subscription.periodEnd &&
-						new Date(subscription.periodEnd) > now
-				)
-			) {
-				accessReason = 'subscription';
-			} else if (
-				subscriptions.some(
-					(subscription) =>
-						subscription.status === 'past_due' &&
-						!subscription.superEndedAt &&
-						subscription.pastDueSince &&
-						now.getTime() - new Date(subscription.pastDueSince).getTime() < SUPER_PAST_DUE_GRACE_MS
-				)
-			) {
-				accessReason = 'past_due_grace';
-			}
-		}
 		access.set(userId, {
-			plan: accessReason ? 'super' : 'free',
-			accessReason,
+			...resolvePlanAccess(
+				claimedUsers.has(userId),
+				hasAdminGrant,
+				billingByUser.get(userId) ?? [],
+				now
+			),
 			hasAdminGrant
 		});
 	}

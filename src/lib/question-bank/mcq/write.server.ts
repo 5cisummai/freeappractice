@@ -29,6 +29,7 @@ import {
 	getStimulusPolicy,
 	isStimulusPolicyEnabledForUnit
 } from '#lib/question-bank/mcq/stimulus-policy.js';
+import { shuffleMcqOptions } from '#lib/question-bank/mcq/shuffle-options.js';
 import { isStimulusQuestionsEnabled } from '#lib/flags.js';
 
 export class QuestionGenerationError extends Error {
@@ -71,7 +72,7 @@ function buildHotPoolDoc(opts: {
 	course: string;
 	unit: string;
 	contentHash: string;
-	answer: APQuestionData;
+	answer: APQuestionData & { optionsShuffled?: boolean };
 	randomKey?: number;
 	active?: boolean;
 }): Pick<
@@ -94,6 +95,7 @@ function buildHotPoolDoc(opts: {
 	| 'difficulty'
 	| 'subtopicId'
 	| 'choiceExplanations'
+	| 'optionsShuffled'
 	| 'randomKey'
 	| 'active'
 > {
@@ -115,6 +117,7 @@ function buildHotPoolDoc(opts: {
 		correctAnswer: answer.correctAnswer,
 		explanation: answer.explanation,
 		...normalizeMcqEnrichment(answer),
+		...(answer.optionsShuffled === true ? { optionsShuffled: true } : {}),
 		randomKey: opts.randomKey ?? newPoolRandomKey(),
 		active: opts.active ?? true
 	};
@@ -135,12 +138,13 @@ async function insertHotPoolDoc(
 			);
 		}
 	}
+	const shuffled = shuffleMcqOptions(answer);
 	return createCanonicalMcqQuestion(
 		buildHotPoolDoc({
 			course: course,
 			unit: cacheUnit,
-			contentHash: computeContentHash(answer.question),
-			answer,
+			contentHash: computeContentHash(shuffled.question),
+			answer: shuffled,
 			questionId
 		})
 	);
@@ -297,15 +301,17 @@ export async function persistStimulusSetToPool(
 	const count = parsed.questions.length;
 	const rows = parsed.questions.map((child, index) => {
 		assertMcqSubtopic(course, unit, child.subtopicId);
+		const shuffled = shuffleMcqOptions(child);
 		const questionId = randomUUID();
-		const topicsCovered = child.topicsCovered.trim();
-		const mainTopic = resolveQuestionMainTopic(child.mainTopic, topicsCovered) || 'Generated topic';
+		const topicsCovered = shuffled.topicsCovered.trim();
+		const mainTopic =
+			resolveQuestionMainTopic(shuffled.mainTopic, topicsCovered) || 'Generated topic';
 		return {
 			questionId,
 			course,
 			unit,
-			contentHash: stimulusChildHash(stimulus, child),
-			contentLength: child.question.length,
+			contentHash: stimulusChildHash(stimulus, shuffled),
+			contentLength: shuffled.question.length,
 			topicsId: randomUUID(),
 			topicsCovered,
 			data: {
@@ -313,16 +319,17 @@ export async function persistStimulusSetToPool(
 				unit,
 				mainTopic,
 				topicsCovered,
-				question: child.question,
+				question: shuffled.question,
 				diagramSpec: null,
 				hasDiagram: Boolean(parsed.diagram),
-				optionA: child.optionA,
-				optionB: child.optionB,
-				optionC: child.optionC,
-				optionD: child.optionD,
-				correctAnswer: child.correctAnswer,
-				explanation: child.explanation,
-				...normalizeMcqEnrichment(child),
+				optionA: shuffled.optionA,
+				optionB: shuffled.optionB,
+				optionC: shuffled.optionC,
+				optionD: shuffled.optionD,
+				correctAnswer: shuffled.correctAnswer,
+				explanation: shuffled.explanation,
+				...normalizeMcqEnrichment(shuffled),
+				optionsShuffled: true,
 				stimulus,
 				stimulusId,
 				stimulusPosition: index,
