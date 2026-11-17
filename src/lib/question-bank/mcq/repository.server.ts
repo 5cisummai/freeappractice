@@ -304,6 +304,7 @@ export async function createCanonicalMcqQuestion(input: CanonicalMcqInput): Prom
 		correctAnswer: input.correctAnswer,
 		explanation: input.explanation,
 		...normalizeMcqEnrichment(input),
+		...(input.optionsShuffled === true ? { optionsShuffled: true } : {}),
 		stimulus: input.stimulus ?? null,
 		stimulusId: input.stimulusId ?? null,
 		stimulusPosition: input.stimulusPosition ?? null,

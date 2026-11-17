@@ -107,8 +107,8 @@ jobs:
       # Data backfills run after db:apply so schema/tables exist first.
       # Each step must be idempotent (safe on every deploy). There is no
       # continue-on-error, so a failure fails the job and is visible in CI logs.
-      - name: Sync AP Art History image set
-        run: bun run db:sync-ap-art-history
+      - name: Backfill MCQ option shuffle
+        run: bun run db:backfill-mcq-option-shuffle
       # Add other required backfills here
 
   build:
