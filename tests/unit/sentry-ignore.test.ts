@@ -90,6 +90,31 @@ describe('isIgnoredSentryError', () => {
 			)
 		).toBe(true);
 	});
+
+	it('drops Outlook/CEFSharp host-object rejection noise', () => {
+		expect(
+			isIgnoredSentryError('Object Not Found Matching Id:1, MethodName:update, ParamCount:4')
+		).toBe(true);
+		expect(
+			isIgnoredSentryError('Object Not Found Matching Id:3, MethodName:update, ParamCount:4')
+		).toBe(true);
+		expect(
+			isIgnoredSentryError(
+				'Non-Error promise rejection captured with value: Object Not Found Matching Id:1, MethodName:update, ParamCount:4'
+			)
+		).toBe(true);
+		expect(
+			isIgnoredSentryError('Object Not Found Matching Id:2, MethodName:simulateEvent, ParamCount:1')
+		).toBe(true);
+	});
+
+	it('keeps generic object-not-found and non-error rejections', () => {
+		expect(isIgnoredSentryError(new Error('Object not found'))).toBe(false);
+		expect(isIgnoredSentryError('Object Not Found Matching Id:1')).toBe(false);
+		expect(isIgnoredSentryError('Non-Error promise rejection captured with value: timeout')).toBe(
+			false
+		);
+	});
 });
 
 describe('isSvelteKitMissingComponentError', () => {

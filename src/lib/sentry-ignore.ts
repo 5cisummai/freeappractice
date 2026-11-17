@@ -15,7 +15,12 @@ export const sentryIgnoreErrors: Array<string | RegExp> = [
 	// Firefox for iOS reader-mode script evaluates window.__firefox__.reader
 	// before the injected private global exists (Mozilla bug 1394296).
 	// Truncated before the closing quote so `.reader` and `.reader.checkReadability` both match.
-	"undefined is not an object (evaluating 'window.__firefox__.reader"
+	"undefined is not an object (evaluating 'window.__firefox__.reader",
+	// Outlook Safe Links / CEFSharp JS-to-.NET bridge. The SDK default only
+	// drops MethodName:simulateEvent; production rejects with update and
+	// other bridge names. Require the ParamCount tail so this cannot match
+	// generic object-not-found messages.
+	/Object Not Found Matching Id:\d+, MethodName:\w+, ParamCount:\d+/
 ];
 
 export function sentryErrorMessage(error: unknown): string {
