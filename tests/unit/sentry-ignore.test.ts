@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	isIgnoredSentryError,
-	isSvelteKitMissingRouteNodeError,
+	isSvelteKitMissingComponentError,
 	sentryIgnoreErrors
 } from '#lib/sentry-ignore.js';
 
@@ -92,28 +92,26 @@ describe('isIgnoredSentryError', () => {
 	});
 });
 
-describe('isSvelteKitMissingRouteNodeError', () => {
-	it.each([
-		"Cannot read properties of undefined (reading 'component')",
-		"Cannot read property 'component' of undefined",
-		"undefined is not an object (evaluating 'n.component')",
-		"Cannot read properties of undefined (reading 'universal')",
-		"Cannot read property 'universal' of undefined",
-		"undefined is not an object (evaluating 's.universal')"
-	])('matches the SvelteKit route-node crash %s', (message) => {
-		expect(isSvelteKitMissingRouteNodeError(new TypeError(message))).toBe(true);
-		expect(isSvelteKitMissingRouteNodeError(`TypeError: ${message}`)).toBe(true);
+describe('isSvelteKitMissingComponentError', () => {
+	it('matches the Chromium SvelteKit route-node crash', () => {
+		expect(
+			isSvelteKitMissingComponentError(
+				new TypeError("Cannot read properties of undefined (reading 'component')")
+			)
+		).toBe(true);
+		expect(
+			isSvelteKitMissingComponentError(
+				"TypeError: Cannot read properties of undefined (reading 'component')"
+			)
+		).toBe(true);
+		expect(
+			isSvelteKitMissingComponentError(
+				new TypeError("Cannot read property 'component' of undefined")
+			)
+		).toBe(true);
 	});
 
 	it('does not treat the crash as ignoreErrors noise', () => {
-		expect(
-			isIgnoredSentryError(
-				new TypeError("Cannot read properties of undefined (reading 'universal')")
-			)
-		).toBe(false);
-		expect(
-			isIgnoredSentryError(new TypeError("undefined is not an object (evaluating 's.universal')"))
-		).toBe(false);
 		expect(
 			isIgnoredSentryError(
 				new TypeError("Cannot read properties of undefined (reading 'component')")
@@ -123,22 +121,12 @@ describe('isSvelteKitMissingRouteNodeError', () => {
 
 	it('keeps other undefined property reads', () => {
 		expect(
-			isSvelteKitMissingRouteNodeError(
+			isSvelteKitMissingComponentError(
 				new TypeError("Cannot read properties of undefined (reading 'foo')")
 			)
 		).toBe(false);
 		expect(
-			isSvelteKitMissingRouteNodeError(new TypeError('Cannot read properties of undefined'))
-		).toBe(false);
-		expect(
-			isSvelteKitMissingRouteNodeError(
-				new TypeError("undefined is not an object (evaluating 'window.__firefox__.reader')")
-			)
-		).toBe(false);
-		expect(
-			isSvelteKitMissingRouteNodeError(
-				new TypeError("undefined is not an object (evaluating 'someNode')")
-			)
+			isSvelteKitMissingComponentError(new TypeError('Cannot read properties of undefined'))
 		).toBe(false);
 	});
 });

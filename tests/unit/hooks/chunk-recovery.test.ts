@@ -97,20 +97,39 @@ describe('client chunk recovery', () => {
 		}
 	);
 
-	it.each([
-		"Cannot read properties of undefined (reading 'component')",
-		"Cannot read properties of undefined (reading 'universal')",
-		"undefined is not an object (evaluating 's.universal')"
-	])('reloads before reporting SvelteKit missing route-node crash %s', async (message) => {
-		await handle(new TypeError(message));
+	it("reloads before reporting SvelteKit missing route-node 'component' crashes", async () => {
+		await handle(new TypeError("Cannot read properties of undefined (reading 'component')"));
 		expect(mocks.reload).toHaveBeenCalledOnce();
 		expect(mocks.captureSentry).not.toHaveBeenCalled();
 		expect(mocks.capturePostHog).not.toHaveBeenCalled();
 	});
 
-	it('reports a repeated missing route-node crash inside the reload window', async () => {
+	it.each([
+		"Cannot read properties of undefined (reading 'universal')",
+		"undefined is not an object (evaluating 's.universal')"
+	])('recovers once from a missing universal route node: %s', async (message) => {
+		const error = new TypeError(message);
+		await handle(error);
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(mocks.captureSentry).not.toHaveBeenCalled();
+
 		mocks.getItem.mockReturnValue(String(Date.now()));
-		const error = new TypeError("Cannot read properties of undefined (reading 'universal')");
+		await handle(error);
+		expect(mocks.reload).toHaveBeenCalledOnce();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+		expect(mocks.capturePostHog).toHaveBeenCalledWith(error);
+	});
+
+	it('reports a TypeError involving a nested universal property access', async () => {
+		const error = new TypeError("undefined is not an object (evaluating 'state.route.universal')");
+		await handle(error);
+		expect(mocks.reload).not.toHaveBeenCalled();
+		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
+	});
+
+	it('reports a repeated missing-component crash inside the reload window', async () => {
+		mocks.getItem.mockReturnValue(String(Date.now()));
+		const error = new TypeError("Cannot read properties of undefined (reading 'component')");
 		await handle(error);
 		expect(mocks.reload).not.toHaveBeenCalled();
 		expect(mocks.captureSentry).toHaveBeenCalledWith(error);
@@ -119,11 +138,10 @@ describe('client chunk recovery', () => {
 });
 
 describe('Sentry beforeSend stale-client recovery', () => {
-	it.each([
-		"Cannot read properties of undefined (reading 'component')",
-		"undefined is not an object (evaluating 's.universal')"
-	])('drops the event only when a one-shot reload starts for %s', async (message) => {
-		const result = await runBeforeSend(new TypeError(message));
+	it('drops the event only when a one-shot reload starts', async () => {
+		const result = await runBeforeSend(
+			new TypeError("Cannot read properties of undefined (reading 'component')")
+		);
 		expect(mocks.reload).toHaveBeenCalledOnce();
 		expect(result).toBeNull();
 	});
@@ -135,6 +153,13 @@ describe('Sentry beforeSend stale-client recovery', () => {
 		const result = await runBeforeSend(error, event);
 		expect(mocks.reload).not.toHaveBeenCalled();
 		expect(result).toBe(event);
+	});
+
+	it('keeps matching global exceptions visible outside the Kit hook', async () => {
+		const error = new TypeError("Cannot read properties of undefined (reading 'universal')");
+		const event = { message: error.message };
+		expect(await runBeforeSend(error, event)).toBe(event);
+		expect(mocks.reload).not.toHaveBeenCalled();
 	});
 
 	it('passes through unrelated errors', async () => {
