@@ -7,12 +7,14 @@ import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { vercelToolbar } from '@vercel/toolbar/plugins/vite';
 import { defineConfig } from 'vitest/config';
+import { kitCaptureScrollFix } from './src/lib/kit-capture-scroll-fix.js';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const isVitest = Boolean(process.env.VITEST);
 
 export default defineConfig({
 	plugins: [
+		kitCaptureScrollFix(),
 		...(isVitest
 			? []
 			: [

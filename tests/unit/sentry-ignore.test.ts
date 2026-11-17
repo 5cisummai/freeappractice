@@ -28,6 +28,11 @@ describe('isIgnoredSentryError', () => {
 				new TypeError("undefined is not an object (evaluating 'someNode.component')")
 			)
 		).toBe(false);
+		expect(
+			isIgnoredSentryError(
+				new TypeError("undefined is not an object (evaluating 'P[e].scroll=Dt()')")
+			)
+		).toBe(false);
 		expect(isIgnoredSentryError(undefined)).toBe(false);
 		expect(isIgnoredSentryError({ message: 'not an error' })).toBe(false);
 	});
