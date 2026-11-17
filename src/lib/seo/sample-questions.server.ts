@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import { mcqServableQualityPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
+import { ownQualityNotBadPredicate } from '#lib/question-bank/quality/serving-filter.server.js';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { mcqQuestions } from '#lib/server/neon/schema.js';
 import sampleQuestionsSnapshot from './data/unit-sample-questions.json';
@@ -26,7 +26,7 @@ export async function getSeoSampleQuestionsForPage(
 				and(
 					inArray(mcqQuestions.questionId, questionIds),
 					eq(mcqQuestions.active, true),
-					mcqServableQualityPredicate()
+					ownQualityNotBadPredicate(mcqQuestions.questionId)
 				)
 			);
 
