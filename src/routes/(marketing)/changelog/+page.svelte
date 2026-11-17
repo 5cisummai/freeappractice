@@ -5,6 +5,30 @@
 
 	const changelog = [
 		{
+			version: '1.10.8',
+			date: 'November 12, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Multiple-choice correct answers are no longer clustered on A. In production, 2,094 of 3,306 active questions (63%) had A as correct, versus 28% B, 7% C, and 1% D; options are now shuffled so new and existing questions spread more evenly across A–D'
+					]
+				}
+			]
+		},
+		{
+			version: '1.10.7',
+			date: 'November 11, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Full-length exams can start for supported courses, drawing exam-sized multiple-choice and free-response sections that match the official blueprint when the question pool can fill them'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.6',
 			date: 'November 6, 2026',
 			sections: [
@@ -1725,7 +1749,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: November 6, 2026"
+			meta="Last Updated: November 12, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

@@ -21,6 +21,8 @@ export type QuizAssemblyInput = {
 	unit?: string;
 	unitRange?: readonly number[];
 	count: number;
+	/** Cap for public quizzes (default 50). Full-length exams may raise this up to 200. */
+	maxCount?: number;
 	focusQuestionIds?: string[];
 	excludeQuestionIds?: string[];
 };
@@ -286,7 +288,8 @@ export async function assembleMcqQuiz(
 	input: QuizAssemblyInput,
 	options: { globalFlagEnabled: boolean }
 ): Promise<QuizAssemblyResult> {
-	const requestedCount = Math.min(50, Math.max(1, Math.floor(input.count)));
+	const maxCount = Math.min(200, Math.max(1, Math.floor(input.maxCount ?? 50)));
+	const requestedCount = Math.min(maxCount, Math.max(1, Math.floor(input.count)));
 	const focusQuestionIds = [
 		...new Set((input.focusQuestionIds ?? []).map((id) => id.trim()).filter(Boolean))
 	];

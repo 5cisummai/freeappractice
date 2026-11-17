@@ -33,6 +33,8 @@ export const McqQuestionPayloadSchema = z.object({
 	optionD: z.string().default(''),
 	correctAnswer: z.enum(LETTERS),
 	explanation: z.string().default(''),
+	/** Set when options were permuted to counter LLM A-bias; used by idempotent backfill. */
+	optionsShuffled: z.boolean().optional(),
 	stimulus: StimulusSchema.nullable().default(null),
 	stimulusId: z.string().uuid().nullable().default(null),
 	stimulusPosition: z.number().int().nonnegative().nullable().default(null),
@@ -157,6 +159,7 @@ export function parseMcqQuestionPayload(data: unknown): McqQuestionPayload {
 		...optionsFromLegacy(record),
 		correctAnswer: asCorrectAnswer(record.correctAnswer ?? record.answer),
 		explanation: asText(record.explanation ?? record.rationale),
+		...(record.optionsShuffled === true ? { optionsShuffled: true } : {}),
 		stimulus,
 		stimulusId,
 		stimulusPosition,

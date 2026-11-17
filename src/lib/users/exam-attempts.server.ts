@@ -1,9 +1,12 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { examAttempts } from '#lib/server/neon/schema.js';
+import type { ExamSection } from '#lib/exams/session.js';
 import {
 	assertPracticeContextAccess,
-	requirePracticeSession
+	requirePracticeSession,
+	startPracticeSession,
+	type PracticeContext
 } from '#lib/users/practice-context.server.js';
 import { publishPersonalPracticeActivity } from '#lib/auth/organization-queries.server.js';
 const notFound = () => ({ kind: 'not_found' as const });
@@ -13,6 +16,42 @@ export type ExamMutation = {
 	action: 'start' | 'save' | 'finish';
 	responses: Record<string, string>;
 };
+
+export async function createExamAttempt(
+	userId: string,
+	context: PracticeContext,
+	input: { course: string; sections: ExamSection[] }
+) {
+	await assertPracticeContextAccess(userId, context);
+	const questionRefs = input.sections.flatMap((section) =>
+		section.items.map((item) => ({
+			questionId: item.questionId,
+			questionType: section.kind
+		}))
+	);
+	const session = await startPracticeSession(userId, 'exam', context, questionRefs, input.course);
+	const [attempt] = await getNeonDatabase()
+		.insert(examAttempts)
+		.values({
+			id: crypto.randomUUID(),
+			userId,
+			organizationId: context.organizationId,
+			practiceSessionId: session.id,
+			course: input.course,
+			sections: input.sections,
+			responses: {},
+			sectionIndex: 0,
+			sectionStartedAt: null,
+			sectionCompletedAt: input.sections.map(() => null),
+			grading: {},
+			status: 'in_progress',
+			revision: 0,
+			score: null
+		})
+		.returning();
+	if (!attempt) throw new Error('Exam attempt could not be created.');
+	return attempt;
+}
 
 export async function listExamAttempts(userId: string, organizationId: string | null) {
 	await assertPracticeContextAccess(userId, { organizationId });
