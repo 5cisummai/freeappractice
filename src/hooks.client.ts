@@ -25,6 +25,16 @@ function isRecoverableStaleClientError(error: unknown): boolean {
 	return isDynamicImportFailure(error) || isSvelteKitMissingComponentError(error);
 }
 
+// Restrict the route-node recovery to Kit's error hook. The same property name
+// can occur in unrelated exceptions seen by the global Sentry handlers.
+function isMissingUniversalRouteNode(error: unknown): boolean {
+	if (!(error instanceof TypeError)) return false;
+	return (
+		error.message === "Cannot read properties of undefined (reading 'universal')" ||
+		/^undefined is not an object \(evaluating '[A-Za-z_$][\w$]*\.universal'\)$/u.test(error.message)
+	);
+}
+
 function hasRecentChunkReload(): boolean {
 	if (typeof window === 'undefined') return false;
 
@@ -90,7 +100,7 @@ export const handleError: HandleClientError = (input) => {
 	// Decide recovery before Sentry's wrapper captures the exception.
 	if (
 		input.kind === 'unknown' &&
-		isRecoverableStaleClientError(input.error) &&
+		(isRecoverableStaleClientError(input.error) || isMissingUniversalRouteNode(input.error)) &&
 		reloadOnceForChunkFailure()
 	) {
 		return;
