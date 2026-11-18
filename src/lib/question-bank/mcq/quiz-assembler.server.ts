@@ -13,8 +13,11 @@ import {
 	isStimulusPolicyEnabledForUnit,
 	type StimulusPolicy
 } from '#lib/question-bank/mcq/stimulus-policy.js';
+import { FOLLOW_UP_EMPTY_CODE, POOL_WARMING_CODE } from '#lib/question-bank/mcq/payload.js';
 import type { GeneratedQuestion } from '#lib/question-bank/mcq/types.js';
 import { logger } from '#lib/server/logger.js';
+
+export type QuizAssemblyErrorCode = typeof POOL_WARMING_CODE | typeof FOLLOW_UP_EMPTY_CODE;
 
 export type QuizAssemblyInput = {
 	course: string;
@@ -47,13 +50,18 @@ export type QuizAssemblyResult = {
 };
 
 export class QuizPoolWarmingError extends Error {
-	readonly code = 'POOL_WARMING';
+	readonly code: QuizAssemblyErrorCode;
 	readonly availableCount: number;
 
-	constructor(message = 'Question pool is warming up. Please retry shortly.', availableCount = 0) {
+	constructor(
+		message = 'Question pool is warming up. Please retry shortly.',
+		availableCount = 0,
+		code: QuizAssemblyErrorCode = POOL_WARMING_CODE
+	) {
 		super(message);
 		this.name = 'QuizPoolWarmingError';
 		this.availableCount = availableCount;
+		this.code = code;
 	}
 }
 
@@ -319,100 +327,130 @@ export async function assembleMcqQuiz(
 
 	const stimulusTargetEnabled =
 		options.globalFlagEnabled && units.some((unit) => isStimulusPolicyEnabledForUnit(policy, unit));
-	const rows = await findActiveQuestionsForQuiz({
-		course: input.course,
-		units,
-		limit: focusMode ? Math.max(requestedCount, 50) : requestedCount,
-		excludeQuestionIds: excludeQuestionIds.length ? excludeQuestionIds : undefined
-	});
-	const allBlocks = buildBlocks(rows, options.globalFlagEnabled, policy);
-	const matchedBlocks = focusMode
-		? allBlocks.filter((block) => blockMatchesTopics(block, missedTopics))
-		: allBlocks;
-	const unmatchedBlocks = focusMode
-		? allBlocks.filter((block) => !blockMatchesTopics(block, missedTopics))
-		: [];
-	const availableCount = allBlocks.reduce(
-		(sum, block) => sum + (block.kind === 'set' ? block.children.length : 1),
-		0
-	);
-	const targetCount = focusMode ? Math.min(requestedCount, availableCount) : requestedCount;
-	const targetStimulusQuestions = stimulusTargetEnabled
-		? Math.round((targetCount * policy.quizTargetQuestionPercent) / 100)
-		: 0;
-	const selected: IQuestion[] = [];
-	let stimulusQuestionCount = 0;
-	let stimulusSetCount = 0;
-	let truncatedSetCount = 0;
+	const sampleLimit = Math.max(requestedCount * 4, 80);
 
-	const fillFromBlocks = (sourceBlocks: QuizBlock[]) => {
-		const remainingBlocks = [...sourceBlocks];
-		while (selected.length < targetCount && remainingBlocks.length) {
-			const block = chooseBlock(
-				remainingBlocks,
-				targetCount - selected.length,
-				stimulusQuestionCount,
-				targetStimulusQuestions
-			);
-			if (!block) break;
-			const blockIndex = remainingBlocks.indexOf(block);
-			remainingBlocks.splice(blockIndex, 1);
-			const taken = takeFromBlock(block, targetCount - selected.length);
-			selected.push(...taken);
-			if (block.kind === 'set') {
-				stimulusSetCount += 1;
-				stimulusQuestionCount += taken.length;
-				if (taken.length < block.children.length) truncatedSetCount += 1;
+	const selectFromRows = (rows: IQuestion[]) => {
+		const allBlocks = buildBlocks(rows, options.globalFlagEnabled, policy);
+		const matchedBlocks = focusMode
+			? allBlocks.filter((block) => blockMatchesTopics(block, missedTopics))
+			: allBlocks;
+		const unmatchedBlocks = focusMode
+			? allBlocks.filter((block) => !blockMatchesTopics(block, missedTopics))
+			: [];
+		const availableCount = allBlocks.reduce(
+			(sum, block) => sum + (block.kind === 'set' ? block.children.length : 1),
+			0
+		);
+		const targetCount = Math.min(requestedCount, availableCount);
+		const targetStimulusQuestions = stimulusTargetEnabled
+			? Math.round((targetCount * policy.quizTargetQuestionPercent) / 100)
+			: 0;
+		const selected: IQuestion[] = [];
+		let stimulusQuestionCount = 0;
+		let stimulusSetCount = 0;
+		let truncatedSetCount = 0;
+
+		const fillFromBlocks = (sourceBlocks: QuizBlock[]) => {
+			const remainingBlocks = [...sourceBlocks];
+			while (selected.length < targetCount && remainingBlocks.length) {
+				const block = chooseBlock(
+					remainingBlocks,
+					targetCount - selected.length,
+					stimulusQuestionCount,
+					targetStimulusQuestions
+				);
+				if (!block) break;
+				const blockIndex = remainingBlocks.indexOf(block);
+				remainingBlocks.splice(blockIndex, 1);
+				const taken = takeFromBlock(block, targetCount - selected.length);
+				selected.push(...taken);
+				if (block.kind === 'set') {
+					stimulusSetCount += 1;
+					stimulusQuestionCount += taken.length;
+					if (taken.length < block.children.length) truncatedSetCount += 1;
+				}
 			}
-		}
+		};
+
+		// Prefer topic-matched blocks; only then fill from the same units.
+		fillFromBlocks(matchedBlocks);
+		if (selected.length < targetCount) fillFromBlocks(unmatchedBlocks);
+
+		return {
+			selected,
+			availableCount,
+			targetStimulusQuestions,
+			stimulusQuestionCount,
+			stimulusSetCount,
+			truncatedSetCount
+		};
 	};
 
-	// Prefer topic-matched blocks; only then fill from the same units.
-	fillFromBlocks(matchedBlocks);
-	if (selected.length < targetCount) fillFromBlocks(unmatchedBlocks);
+	const loadRows = (excludeIds: string[]) =>
+		findActiveQuestionsForQuiz({
+			course: input.course,
+			units,
+			limit: sampleLimit,
+			excludeQuestionIds: excludeIds.length ? excludeIds : undefined
+		});
 
-	if (selected.length === 0) {
+	let assembled = selectFromRows(await loadRows(excludeQuestionIds));
+	if (assembled.selected.length === 0 && focusMode && focusQuestionIds.length) {
+		const focusIdSet = new Set(focusQuestionIds);
+		const retryExclude = excludeQuestionIds.filter((id) => !focusIdSet.has(id));
+		if (retryExclude.length !== excludeQuestionIds.length) {
+			assembled = selectFromRows(await loadRows(retryExclude));
+		}
+	}
+
+	if (assembled.selected.length === 0) {
 		throw new QuizPoolWarmingError(
 			focusMode
 				? 'No follow-up questions are available from the missed units right now.'
-				: `Not enough active questions are available for a ${requestedCount}-question quiz. Maximum available: ${availableCount}.`,
-			availableCount
+				: `Not enough active questions are available for a ${requestedCount}-question quiz. Maximum available: ${assembled.availableCount}.`,
+			assembled.availableCount,
+			focusMode ? FOLLOW_UP_EMPTY_CODE : POOL_WARMING_CODE
 		);
 	}
 
-	if (!focusMode && selected.length < requestedCount) {
-		throw new QuizPoolWarmingError(
-			`Not enough active questions are available for a ${requestedCount}-question quiz. Maximum available: ${availableCount}.`,
-			availableCount
-		);
-	}
-
-	const count = selected.length;
+	const selected = assembled.selected;
 	const focusMatchedCount = focusMode
 		? countTopicMatchedQuestions(selected, missedTopics)
 		: undefined;
 
-	const stimulusTargetDeviation = stimulusQuestionCount - targetStimulusQuestions;
+	if (selected.length < requestedCount) {
+		logger.info('Quiz assembled with fewer questions than requested', {
+			course: input.course,
+			unit: input.unit,
+			requestedCount,
+			selectedCount: selected.length,
+			availableCount: assembled.availableCount,
+			focusMode
+		});
+	}
+
+	const stimulusTargetDeviation =
+		assembled.stimulusQuestionCount - assembled.targetStimulusQuestions;
 	logger.info('Quiz stimulus target deviation', {
 		course: input.course,
 		unit: input.unit,
-		requestedCount: count,
-		stimulusTargetQuestionCount: targetStimulusQuestions,
-		stimulusQuestionCount,
+		requestedCount,
+		stimulusTargetQuestionCount: assembled.targetStimulusQuestions,
+		stimulusQuestionCount: assembled.stimulusQuestionCount,
 		stimulusTargetDeviation
 	});
 
 	return {
 		questions: selected.map(toGenerated),
 		metrics: {
-			requestedCount: focusMode ? requestedCount : count,
+			requestedCount,
 			selectedCount: selected.length,
-			stimulusTargetQuestionCount: targetStimulusQuestions,
+			stimulusTargetQuestionCount: assembled.targetStimulusQuestions,
 			stimulusTargetDeviation,
-			stimulusQuestionCount,
-			stimulusSetCount,
-			discreteQuestionCount: selected.length - stimulusQuestionCount,
-			truncatedSetCount,
+			stimulusQuestionCount: assembled.stimulusQuestionCount,
+			stimulusSetCount: assembled.stimulusSetCount,
+			discreteQuestionCount: selected.length - assembled.stimulusQuestionCount,
+			truncatedSetCount: assembled.truncatedSetCount,
 			policyEnabled: stimulusTargetEnabled,
 			globalFlagEnabled: options.globalFlagEnabled,
 			...(focusMatchedCount !== undefined ? { focusMatchedCount } : {})

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+	FOLLOW_UP_EMPTY_CODE,
+	INSUFFICIENT_QUESTIONS_CODE,
+	isFollowUpEmptyResponse,
+	isInsufficientQuestionsResponse,
 	isPoolWarmingResponse,
 	POOL_WARMING_CODE,
 	parseQuestionPayloadFromResponse
@@ -149,5 +153,23 @@ describe('isPoolWarmingResponse', () => {
 		expect(isPoolWarmingResponse({ code: POOL_WARMING_CODE })).toBe(false);
 		expect(isPoolWarmingResponse({ error: 'nope' })).toBe(false);
 		expect(isPoolWarmingResponse(null)).toBe(false);
+	});
+});
+
+describe('quiz start error payloads', () => {
+	it('accepts insufficient-question payloads with an available count', () => {
+		expect(
+			isInsufficientQuestionsResponse({
+				code: INSUFFICIENT_QUESTIONS_CODE,
+				error: 'short',
+				availableCount: 4
+			})
+		).toBe(true);
+		expect(isInsufficientQuestionsResponse({ code: INSUFFICIENT_QUESTIONS_CODE })).toBe(false);
+	});
+
+	it('accepts follow-up empty payloads', () => {
+		expect(isFollowUpEmptyResponse({ code: FOLLOW_UP_EMPTY_CODE, error: 'none' })).toBe(true);
+		expect(isFollowUpEmptyResponse({ code: INSUFFICIENT_QUESTIONS_CODE })).toBe(false);
 	});
 });

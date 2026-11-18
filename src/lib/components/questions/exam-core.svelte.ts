@@ -411,10 +411,12 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			if (opts.loadQuestions) {
 				const loadedQuestions = await loadQuestionsViaLoader(targetCount);
 				if (!isCurrentRun(token) || !getMounted()) return;
-				if (loadedQuestions.length < targetCount) {
-					throw new Error('Quiz service returned fewer questions than requested.');
+				if (loadedQuestions.length === 0) {
+					throw new Error('Quiz service returned no questions.');
 				}
-				questions = loadedQuestions.slice(0, targetCount);
+				const actualCount = Math.min(targetCount, loadedQuestions.length);
+				if (actualCount !== targetCount) initializeSlots(actualCount);
+				questions = loadedQuestions.slice(0, actualCount);
 				loadingCount = 0;
 				status = 'active';
 				beginTiming(input.timeLimitMs, input.startedAtMs);

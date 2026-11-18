@@ -15,9 +15,11 @@ const {
 	validateQuestionRequest: vi.fn(),
 	QuizPoolWarmingError: class extends Error {
 		availableCount: number;
-		constructor(message?: string, availableCount = 0) {
+		code: string;
+		constructor(message?: string, availableCount = 0, code = 'POOL_WARMING') {
 			super(message);
 			this.availableCount = availableCount;
+			this.code = code;
 		}
 	}
 }));
@@ -112,6 +114,38 @@ describe('POST /api/question/quiz refill authorization', () => {
 		expect(await response.json()).toMatchObject({
 			code: 'INSUFFICIENT_QUESTIONS',
 			availableCount: 12,
+			refillRequested: false
+		});
+		expect(response.headers.get('Retry-After')).toBeNull();
+	});
+
+	it('returns 400 FOLLOW_UP_EMPTY when a follow-up quiz has no remaining questions', async () => {
+		assembleMcqQuiz.mockRejectedValueOnce(
+			new QuizPoolWarmingError(
+				'No follow-up questions are available from the missed units right now.',
+				0,
+				'FOLLOW_UP_EMPTY'
+			)
+		);
+
+		const response = await POST({
+			request: new Request('http://localhost/api/question/quiz', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					course: 'AP Biology',
+					unit: 'Unit 1',
+					count: 3,
+					focusQuestionIds: ['missed-1']
+				})
+			}),
+			locals: { userId: undefined }
+		} as Parameters<typeof POST>[0]);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toMatchObject({
+			code: 'FOLLOW_UP_EMPTY',
+			availableCount: 0,
 			refillRequested: false
 		});
 		expect(response.headers.get('Retry-After')).toBeNull();
