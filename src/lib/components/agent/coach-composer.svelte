@@ -12,6 +12,7 @@
 	import BookOpenIcon from '@tabler/icons-svelte/icons/book-filled';
 	import CalendarDaysIcon from '@tabler/icons-svelte/icons/calendar-event';
 
+	import CoachDictation from './coach-dictation.svelte';
 	import ArrowUpIcon from '@tabler/icons-svelte/icons/arrow-up';
 
 	import SquareIcon from '@tabler/icons-svelte/icons/square-filled';
@@ -28,7 +29,6 @@
 		type CoachComposerActionId
 	} from '#lib/agent/personalization/composer-actions.js';
 	import type { CoachThinkingMode } from '#lib/agent/request.js';
-	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
 	import { cn } from '#lib/utils.js';
 
 	import { toast } from 'svelte-sonner';
@@ -61,6 +61,8 @@
 		onStop: () => void;
 	} = $props();
 	let coachActionsOpen = $state(false);
+	let dictating = $state(false);
+	let dictationPrefix = '';
 	const asIcon = (icon: unknown) => icon as Component;
 	let canSendComposer = $derived(
 		Boolean(sessionId) &&
@@ -139,7 +141,9 @@
 
 <PromptInput.Root
 	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-[0_12px_32px_0_rgba(0,0,0,0.02)] transition-all dark:border-border"
-	onSubmit={({ text, files }) => send(text, files)}
+	onSubmit={({ text, files }) => {
+		if (!dictating) return send(text, files);
+	}}
 	bind:attachments
 	accept={imageInputEnabled ? COACH_ATTACHMENT_ACCEPT : 'application/x-disabled'}
 	maxFiles={imageInputEnabled ? 1 : 0}
@@ -177,7 +181,7 @@
 				bind:ref={composerInputRef}
 				bind:value={input}
 				placeholder="Ask Pip"
-				disabled={!sessionId || streaming || pendingQuestion}
+				disabled={!sessionId || streaming || pendingQuestion || dictating}
 				class="text-md min-h-[32px] min-w-0 flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
 			/>
 		</div>
@@ -239,15 +243,30 @@
 					{/each}
 				</Select.Content>
 			</Select.Root>
+			<CoachDictation
+				disabled={!sessionId || pendingQuestion || streaming}
+				bind:busy={dictating}
+				onStart={() => {
+					dictationPrefix = input;
+				}}
+				onText={(text) => {
+					input = dictationPrefix
+						? dictationPrefix + (/\s$/.test(dictationPrefix) ? '' : ' ') + text
+						: text;
+				}}
+				onFinish={() => {
+					void tick().then(() => composerInputRef?.focus());
+				}}
+			/>
 			<PromptInput.Submit
 				{status}
 				size="icon-sm"
-				disabled={!canSendComposer && !streaming}
+				disabled={dictating || (!canSendComposer && !streaming)}
 				{onStop}
 				class={cn(
 					'size-8 rounded-full p-0 shadow-none',
 					canSendComposer || streaming
-						? SUPER_GRADIENT_BUTTON_CLASS
+						? 'bg-foreground text-background hover:bg-foreground/85'
 						: 'border-0 bg-muted text-muted-foreground hover:bg-muted'
 				)}
 			>
