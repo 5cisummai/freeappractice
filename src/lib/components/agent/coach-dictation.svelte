@@ -21,6 +21,7 @@
 		onText: (text: string) => void;
 		onFinish: () => void;
 	} = $props();
+	const descriptionId = $props.id();
 	let supported = $state(false);
 	let recording = $state(false);
 	let recorder: MediaRecorder | undefined;
@@ -125,6 +126,9 @@
 </script>
 
 {#if supported}
+	<span id={descriptionId} class="sr-only">
+		Your recording is sent to Vercel and SpaceXAI for transcription.
+	</span>
 	<Button
 		type="button"
 		variant="ghost"
@@ -137,9 +141,10 @@
 			: busy
 				? 'Transcribing dictation'
 				: 'Dictate a message'}
+		aria-describedby={descriptionId}
 		title={recording
 			? 'Finish dictation'
-			: `Dictate a message (${formatCreditsFromMilli(DICTATION_CREDITS_MILLI)} credits per session)`}
+			: `Dictate a message (${formatCreditsFromMilli(DICTATION_CREDITS_MILLI)} credits). Audio is sent to Vercel and SpaceXAI for transcription.`}
 		aria-pressed={recording}
 	>
 		{#if recording}<SquareIcon class="size-4 text-destructive" />{:else if busy}<LoaderIcon

@@ -5,6 +5,26 @@
 
 	const changelog = [
 		{
+			version: '1.10.9',
+			date: 'November 19, 2026',
+			sections: [
+				{
+					title: 'New Features',
+					items: [
+						'Use the microphone in Pip to dictate a message, then review and edit the transcript before sending. Each transcribed recording uses 0.1 Coach credits.'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'The app can recover from stale page code after an update by reloading once',
+						'The app can start and honor analytics choices in Safari when browser storage is blocked',
+						'Public unit pages check sample-question availability with a faster lookup'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.8',
 			date: 'November 12, 2026',
 			sections: [
@@ -1749,7 +1769,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: November 12, 2026"
+			meta="Last Updated: November 19, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">
