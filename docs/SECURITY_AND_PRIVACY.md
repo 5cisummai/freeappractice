@@ -49,6 +49,10 @@ Memory retrieval and recording check opt-in/disclosure preferences, with feature
 
 Upstash Redis holds short-lived controls, not memory vectors. Memory contents and embeddings are stored in Neon. User-facing memory deletion and cleanup remove the relevant Neon memory records.
 
+## Coach dictation
+
+The [dictation route](../src/routes/api/coach/dictate/+server.ts) accepts a bounded recording from an authenticated, authorized Coach user and sends it to SpaceXAI’s Grok STT through Vercel AI Gateway. The route returns text with `Cache-Control: no-store` and does not write audio or the transcription response to application storage. The browser inserts the text into the composer. Sending the draft makes the text part of the durable Coach conversation. Dictation consumes 0.1 Coach credits per transcribed recording. PostHog session replay excludes network captures for this endpoint. Provider retention depends on the providers’ policies and configuration.
+
 ## Attachment handling
 
 [Attachment validation](../src/lib/agent/attachments/validation.server.ts) accepts still PNG/JPEG/WebP images with byte, dimension, and decoded-pixel limits. Sharp decodes and re-encodes them as WebP, dropping source metadata. Text attachments accept supported UTF-8 text formats with byte/character limits, reject null bytes, and sanitize filenames.

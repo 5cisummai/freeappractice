@@ -49,6 +49,7 @@ export function initPostHogAnalytics() {
 			maskTextSelector: '.ph-mask-pii',
 			maskCapturedNetworkRequestFn: (request) => {
 				if (request.name) {
+					if (/\/api\/coach\/dictate(?:[?#]|$)/.test(request.name)) return null;
 					request.name = request.name.replace(/([?&](email|token|auth)=)[^&]+/gi, '$1[REDACTED]');
 				}
 				return request;

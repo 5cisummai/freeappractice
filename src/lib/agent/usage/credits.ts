@@ -19,6 +19,9 @@ export const SUPER_MONTHLY_CREDITS_MILLI = SUPER_MONTHLY_CREDITS * MILLICREDITS_
 
 export const WEB_SEARCH_SURCHARGE_MILLI = 250;
 
+/** Flat charge for a dictation session (up to 45 seconds in the UI). */
+export const DICTATION_CREDITS_MILLI = 100;
+
 /** Standard per-token rates from AI Gateway's model catalog. */
 const MODEL_PRICING = {
 	'openai/gpt-6-luna': {
