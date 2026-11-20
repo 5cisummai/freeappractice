@@ -1,4 +1,4 @@
-import { gateway, transcribe } from 'ai';
+import { transcribe } from 'ai';
 import { z } from 'zod';
 import { readJsonBody } from '#lib/server/request-body.server.js';
 import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
@@ -12,6 +12,8 @@ import {
 } from '#lib/agent/usage/credits.js';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
 import { logger } from '#lib/server/logger.js';
+
+const DICTATION_MODEL = 'spacexai/grok-stt';
 
 const inputSchema = z.object({
 	audio: z
@@ -45,7 +47,7 @@ export const POST = withAuthedHandler(
 				);
 			}
 			const result = await transcribe({
-				model: gateway.transcription('spacexai/grok-stt'),
+				model: DICTATION_MODEL,
 				audio: input.data.audio,
 				abortSignal: AbortSignal.any([event.request.signal, AbortSignal.timeout(45_000)])
 			});

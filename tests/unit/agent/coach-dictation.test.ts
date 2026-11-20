@@ -3,7 +3,6 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 const mocks = vi.hoisted(() => ({ transcribe: vi.fn(), start: vi.fn(), charge: vi.fn() }));
 vi.mock('ai', () => ({
-	gateway: { transcription: () => 'grok-stt' },
 	transcribe: mocks.transcribe
 }));
 vi.mock('#lib/agent/access.server.js', () => ({
