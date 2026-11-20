@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { findActiveQuestionsForQuizMock, refillMock } = vi.hoisted(() => ({
+const { findActiveQuestionsForQuizMock, findCachedQuestionsMock, refillMock } = vi.hoisted(() => ({
 	findActiveQuestionsForQuizMock: vi.fn(),
+	findCachedQuestionsMock: vi.fn(),
 	refillMock: vi.fn()
 }));
 
@@ -16,7 +17,11 @@ vi.mock('#lib/server/logger.js', () => ({
 vi.mock('#lib/question-bank/mcq/repository.server.js', async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import('#lib/question-bank/mcq/repository.server.js')>();
-	return { ...actual, findActiveQuestionsForQuiz: findActiveQuestionsForQuizMock };
+	return {
+		...actual,
+		findActiveQuestionsForQuiz: findActiveQuestionsForQuizMock,
+		findCachedQuestions: findCachedQuestionsMock
+	};
 });
 
 vi.mock('#lib/question-bank/mcq/stimulus-policy.js', () => ({
@@ -91,6 +96,12 @@ function question(id: string, position?: number) {
 }
 
 describe('assembleMcqQuiz', () => {
+	beforeEach(() => {
+		findActiveQuestionsForQuizMock.mockReset();
+		findCachedQuestionsMock.mockReset();
+		findCachedQuestionsMock.mockResolvedValue([]);
+	});
+
 	it('truncates a shared set to the remaining exact quiz capacity', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([
 			question('q0', 0),
@@ -135,8 +146,22 @@ describe('assembleMcqQuiz', () => {
 		vi.restoreAllMocks();
 	});
 
-	it('reports the maximum available count when the pool is too small', async () => {
+	it('serves the available pool when it is smaller than the requested count', async () => {
 		findActiveQuestionsForQuizMock.mockResolvedValue([question('only')]);
+		const result = await assembleMcqQuiz(
+			{ course: 'AP Biology', unit: 'Unit 1', count: 10 },
+			{ globalFlagEnabled: true }
+		);
+		expect(result.questions).toHaveLength(1);
+		expect(result.questions[0]?.questionId).toBe('only');
+		expect(result.metrics).toMatchObject({
+			requestedCount: 10,
+			selectedCount: 1
+		});
+	});
+
+	it('throws POOL_WARMING when the unit has no servable questions', async () => {
+		findActiveQuestionsForQuizMock.mockResolvedValue([]);
 		await expect(
 			assembleMcqQuiz(
 				{ course: 'AP Biology', unit: 'Unit 1', count: 10 },
@@ -144,9 +169,52 @@ describe('assembleMcqQuiz', () => {
 			)
 		).rejects.toMatchObject({
 			name: 'QuizPoolWarmingError',
-			availableCount: 1,
-			message:
-				'Not enough active questions are available for a 10-question quiz. Maximum available: 1.'
+			code: 'POOL_WARMING',
+			availableCount: 0
+		});
+	});
+
+	it('reuses missed questions when a follow-up has no unused items in the unit', async () => {
+		findCachedQuestionsMock.mockResolvedValue([question('missed')]);
+		findActiveQuestionsForQuizMock
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([question('missed')]);
+		const result = await assembleMcqQuiz(
+			{
+				course: 'AP Biology',
+				unit: 'Unit 1',
+				count: 5,
+				focusQuestionIds: ['missed'],
+				excludeQuestionIds: ['missed', 'correct']
+			},
+			{ globalFlagEnabled: true }
+		);
+		expect(result.questions.map((item) => item.questionId)).toEqual(['missed']);
+		expect(findActiveQuestionsForQuizMock).toHaveBeenCalledTimes(2);
+		expect(findActiveQuestionsForQuizMock.mock.calls[1]?.[0]).toMatchObject({
+			excludeQuestionIds: ['correct']
+		});
+	});
+
+	it('throws FOLLOW_UP_EMPTY when a follow-up still has nothing after reusing missed items', async () => {
+		findCachedQuestionsMock.mockResolvedValue([question('missed')]);
+		findActiveQuestionsForQuizMock.mockResolvedValue([]);
+		await expect(
+			assembleMcqQuiz(
+				{
+					course: 'AP Biology',
+					unit: 'Unit 1',
+					count: 3,
+					focusQuestionIds: ['missed'],
+					excludeQuestionIds: ['missed']
+				},
+				{ globalFlagEnabled: true }
+			)
+		).rejects.toMatchObject({
+			name: 'QuizPoolWarmingError',
+			code: 'FOLLOW_UP_EMPTY',
+			availableCount: 0,
+			message: 'No follow-up questions are available from the missed units right now.'
 		});
 	});
 
