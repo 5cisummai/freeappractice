@@ -8,13 +8,18 @@ import {
 import { updateUserCourses } from '#lib/users/model.server.js';
 import { getUserSettings } from '#lib/users/settings.server.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
 	const userId = locals.userId!;
 	const [planAccess, profile] = await Promise.all([
 		getPlanAccessForRequest(locals, userId),
 		getTutorProfileViewForRequest(locals, userId)
 	]);
-	return getUserSettings(userId, planAccess, profile);
+	return {
+		...(await getUserSettings(userId, planAccess, profile)),
+		defaultPracticeMode: cookies.get('practice_default_mode') === 'frq' ? 'frq' : 'mcq',
+		showQuizTimer: cookies.get('practice_hide_quiz_timer') !== '1',
+		defaultQuizCount: Math.max(1, Math.min(50, Number(cookies.get('practice_quiz_count')) || 10))
+	};
 };
 
 export const actions: Actions = {

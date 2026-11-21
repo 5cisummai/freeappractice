@@ -45,5 +45,5 @@
 		</Card.Root>
 	</div>
 {:else}
-	<CoachShell surface="page" />
+	<CoachShell />
 {/if}

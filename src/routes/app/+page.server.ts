@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import { getGroupOverview } from '#lib/auth/group-views.server.js';
 import { loadUserDashboardData } from '#lib/users/dashboard.server.js';
 import { authorizeFeatureRequest, getPlanAccessForRequest } from '#lib/agent/access.server.js';
-import { getCurrentStudyPlan } from '#lib/agent/plans/store.server.js';
+import { getCurrentStudyPlan, studyPlanForDay } from '#lib/agent/plans/store.server.js';
 import { timezoneFromCookies } from '#lib/users/timezone.js';
 import { resolvePracticeContext } from '#lib/users/practice-context.server.js';
 import { formatDayInTimeZone } from '#lib/dates/calendar-day.js';
@@ -29,11 +29,12 @@ export const load: PageServerLoad = async ({ cookies, locals, parent: getParent 
 			? getGroupOverview(userId, activeOrganization.id, timeZone)
 			: Promise.resolve({ orgActivity: [], orgSharedSets: [], orgLeaderboard: [] })
 	]);
+	const today = formatDayInTimeZone(new Date(), timeZone);
 	return {
 		...dashboard,
-		today: formatDayInTimeZone(new Date(), timeZone),
+		today,
 		planAccess,
-		studyPlan: studyPlanAccess.allowed ? studyPlan : null,
+		studyPlan: studyPlanForDay(studyPlan, today),
 		canViewStudyPlan: studyPlanAccess.allowed,
 		...groupOverview
 	};

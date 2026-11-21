@@ -42,6 +42,7 @@
 		enabled?: boolean;
 		isGenerating?: boolean;
 		persistHistory?: boolean;
+		showTimer?: boolean;
 		showCoachReview?: boolean;
 		initialQuestions?: GeneratedQuestion[] | null;
 		sharedSlug?: string;
@@ -67,6 +68,7 @@
 		enabled = true,
 		isGenerating = $bindable(false),
 		persistHistory = true,
+		showTimer = true,
 		showCoachReview = true,
 		initialQuestions = null,
 		sharedSlug = '',
@@ -969,7 +971,7 @@
 			stage="review"
 			reviewTitle={quizTitle}
 			navItems={exam.navItems}
-			elapsedMs={exam.elapsedMs}
+			elapsedMs={showTimer ? exam.elapsedMs : undefined}
 			remainingMs={exam.remainingMs}
 			submitDisabled={!exam.canSubmit}
 			onGoTo={(index) => exam.exitReviewTo(index)}
@@ -1006,7 +1008,7 @@
 		onAddTextAnnotation={addTextAnnotation}
 		onRemoveTextAnnotation={removeTextAnnotation}
 		navItems={exam.navItems}
-		elapsedMs={exam.elapsedMs}
+		elapsedMs={showTimer ? exam.elapsedMs : undefined}
 		remainingMs={exam.remainingMs}
 		isLastQuestion={exam.isLastQuestion}
 		nextDisabled={exam.isLastQuestion ? !exam.canFinish : !exam.nextQuestionReady}

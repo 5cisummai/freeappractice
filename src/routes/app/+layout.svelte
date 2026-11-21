@@ -4,9 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AppSidebar from '#lib/components/layout/app-sidebar.svelte';
-	import CoachSidebarProvider from '#lib/components/agent/coach-sidebar-provider.svelte';
-	import CoachSidebarRoot from '#lib/components/agent/coach-sidebar.svelte';
-	import CoachSidebarTrigger from '#lib/components/agent/coach-sidebar-trigger.svelte';
+	import SettingsSidebar from '#lib/components/layout/settings-sidebar.svelte';
 	import FreeBetaClaimDialog from '#lib/components/agent/free-beta-claim-dialog.svelte';
 	import ThemeToggle from '#lib/components/layout/theme-toggle.svelte';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
@@ -19,8 +17,6 @@
 	} from '#lib/client/activation-analytics.js';
 	import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
 	import { apiFetch } from '#lib/client/api.js';
-	import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
-	import LazyComponent from '#lib/components/app/lazy-component.svelte';
 	import {
 		recordPendingSharedQuizRunFailure,
 		readPendingSharedQuizRuns,
@@ -30,17 +26,13 @@
 	let { data, children } = $props();
 	const coachPageToolbar = setCoachPageToolbar();
 	const isOnboarding = $derived(page.url.pathname.endsWith('/app/onboarding'));
+	const isSettings = $derived(page.url.pathname.startsWith(resolve('app/settings')));
 	const isCoachPage = $derived.by(() => {
 		const coachHref = resolve('app/coach');
 		return page.url.pathname === coachHref || page.url.pathname.startsWith(`${coachHref}/`);
 	});
-	const showCoachSidebar = $derived(data.coachSidebarEnabled && !isCoachPage);
 	const showFreeBetaClaimDialog = $derived(data.showFreeBetaClaimDialog && !isOnboarding);
 	let layoutMounted = $state(false);
-	let coachSidebarOpen = $state(false);
-	const loadCoachShell = createLazyComponentLoader(
-		() => import('#lib/components/agent/coach-shell.svelte')
-	);
 
 	function stripAuthQueryParam(param: 'signup' | 'login') {
 		const url = new URL(page.url.href);
@@ -110,8 +102,10 @@
 		{@render children()}
 	</main>
 {:else}
-	<CoachSidebarProvider bind:open={coachSidebarOpen}>
-		<Sidebar.Provider class="bg-sidebar">
+	<Sidebar.Provider class="bg-sidebar">
+		{#if isSettings}
+			<SettingsSidebar />
+		{:else}
 			<AppSidebar
 				isAdmin={data.isAdmin}
 				user={data.user}
@@ -120,44 +114,23 @@
 				activeOrganization={data.activeOrganization}
 				ownedGroupCount={data.ownedGroupCount}
 			/>
-			<Sidebar.Inset class="min-w-0">
-				<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
-					<SidebarTrigger />
-					<div class="ml-auto flex items-center gap-2">
-						{#if isCoachPage && coachPageToolbar.snippet}
-							{@render coachPageToolbar.snippet()}
-						{/if}
-						{#if layoutMounted}
-							<ThemeToggle />
-						{/if}
-						{#if showCoachSidebar}
-							<CoachSidebarTrigger />
-						{/if}
-					</div>
-				</header>
-
-				<div class="min-w-0 flex-1">
-					{@render children()}
+		{/if}
+		<Sidebar.Inset class="min-w-0">
+			<header class="sticky top-0 z-10 flex shrink-0 items-center gap-2 p-4">
+				<SidebarTrigger />
+				<div class="ml-auto flex items-center gap-2">
+					{#if isCoachPage && coachPageToolbar.snippet}
+						{@render coachPageToolbar.snippet()}
+					{/if}
+					{#if layoutMounted}
+						<ThemeToggle />
+					{/if}
 				</div>
-			</Sidebar.Inset>
+			</header>
 
-			{#if showCoachSidebar}
-				<CoachSidebarRoot>
-					<Sidebar.Content class="min-h-0 overflow-hidden p-0">
-						{#if coachSidebarOpen}
-							<LazyComponent
-								load={loadCoachShell}
-								pending="Loading Coach…"
-								error="Coach could not be loaded."
-							>
-								{#snippet children(CoachShell)}
-									<CoachShell surface="sidebar" />
-								{/snippet}
-							</LazyComponent>
-						{/if}
-					</Sidebar.Content>
-				</CoachSidebarRoot>
-			{/if}
-		</Sidebar.Provider>
-	</CoachSidebarProvider>
+			<div class="min-w-0 flex-1">
+				{@render children()}
+			</div>
+		</Sidebar.Inset>
+	</Sidebar.Provider>
 {/if}
