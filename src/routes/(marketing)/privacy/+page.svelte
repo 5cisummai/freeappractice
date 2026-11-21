@@ -25,7 +25,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Privacy Policy" meta="Last Updated: October 12, 2026" />
+		<PublicPageHero title="Privacy Policy" meta="Last Updated: November 19, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-8 text-base leading-7">
 			<section>
@@ -71,6 +71,12 @@
 						private Vercel Blob storage tied to that chat and sent to the AI provider when needed to answer
 						your questions. They remain until you delete the chat or your account, including if your Super
 						subscription ends. File deletion is queued and retried if storage is temporarily unavailable.
+					</li>
+					<li>
+						<strong>Coach dictation:</strong> If you choose to dictate and grant microphone access, your
+						browser captures a short audio recording. When recording ends, we send the audio through Vercel
+						AI Gateway to SpaceXAI’s Grok speech-to-text service to turn it into text. The transcript
+						appears in your draft for you to edit or discard before sending.
 					</li>
 					<li>
 						<strong>Super conversations:</strong> Coach conversations, tool activity, and approved actions
@@ -151,6 +157,7 @@
 					<li>To authenticate accounts, maintain sessions, and protect the Service</li>
 					<li>To track progress, bookmarks, attempts, and saved preferences</li>
 					<li>To personalize tutoring and build or update study plans</li>
+					<li>To transcribe Coach dictation and track Coach credit usage</li>
 					<li>To send transactional emails such as verification and password reset emails</li>
 					<li>To process subscriptions, payments, taxes, cancellations, and account access</li>
 					<li>To respond to bug reports, account requests, and support inquiries</li>
@@ -285,6 +292,10 @@
 						<strong>PostHog:</strong> optional product analytics, error tracking, and session replay
 					</li>
 					<li>
+						<strong>SpaceXAI:</strong> processes Coach dictation audio and returns the transcript through
+						Vercel AI Gateway
+					</li>
+					<li>
 						<strong>Vercel:</strong> hosting, deployment infrastructure, cookieless analytics, private
 						Blob storage for Coach image attachments, AI Gateway request processing and usage reporting,
 						and related infrastructure
@@ -332,6 +343,11 @@
 					product retention behavior includes:
 				</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
+					<li>
+						Free AP Practice does not save dictation audio in its application storage. If you send
+						the draft, the text is saved as part of your Coach conversation. Vercel and SpaceXAI
+						handle data they process under their own retention practices.
+					</li>
 					<li>Study-plan records expire after approximately 90 days.</li>
 					<li>
 						Durable Super conversation messages and Coach audit records are retained while needed
@@ -375,6 +391,11 @@
 					Gateway for that browser, disable tutor memory, delete memories, clear practice data, or
 					request account deletion. Contact us to exercise a right or ask for help; we may need to
 					verify the request and may retain information where law or security requires it.
+				</p>
+				<p class="mt-2">
+					Dictation is optional. You can type your messages and manage or revoke microphone
+					permission in your browser’s site settings. Dictation sends audio for transcription even
+					if you decline optional analytics.
 				</p>
 			</section>
 

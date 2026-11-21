@@ -162,7 +162,7 @@
 
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
 	let composerHasText = $derived(input.trim().length > 0);
-	let hasMessages = $derived((coach.messages ?? []).length > 0);
+	let hasMessages = $derived(coach.messages.length > 0);
 	let emptyChat = $derived(!hasMessages);
 	let pendingCoachQuestion = $derived.by(() => {
 		const lastMessage = coach.messages.at(-1);
@@ -768,20 +768,22 @@
 							submitCoachQuestionResult(pendingCoachQuestion.toolCallId, output)}
 					/>
 				{/if}
-				<CoachComposer
-					bind:input
-					bind:attachments
-					bind:selectedCoachActionIds
-					bind:thinkingMode
-					bind:composerInputRef
-					{sessionId}
-					{streaming}
-					pendingQuestion={Boolean(pendingCoachQuestion)}
-					{imageInputEnabled}
-					status={coach.status}
-					{send}
-					onStop={() => void coach.stop()}
-				/>
+				{#key sessionId}
+					<CoachComposer
+						bind:input
+						bind:attachments
+						bind:selectedCoachActionIds
+						bind:thinkingMode
+						bind:composerInputRef
+						{sessionId}
+						{streaming}
+						pendingQuestion={Boolean(pendingCoachQuestion)}
+						{imageInputEnabled}
+						status={coach.status}
+						{send}
+						onStop={() => void coach.stop()}
+					/>
+				{/key}
 
 				{#if emptyChat}
 					<ul

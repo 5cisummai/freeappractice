@@ -27,7 +27,7 @@
 
 <main id="main-content" class="flex-1 py-12">
 	<div class="mx-auto w-full max-w-3xl space-y-8 px-5 sm:px-8">
-		<PublicPageHero title="Terms of Service" meta="Last Updated: October 11, 2026" />
+		<PublicPageHero title="Terms of Service" meta="Last Updated: November 19, 2026" />
 
 		<div class="prose prose-neutral dark:prose-invert max-w-none space-y-6 text-base leading-7">
 			<section>
@@ -96,6 +96,10 @@
 						applicable law and the disclosures made at checkout.
 					</p>
 				{/if}
+				<p class="mt-2">
+					Coach dictation uses 0.1 Coach credits per transcribed recording from your existing
+					balance. Review the transcript before sending it to Coach.
+				</p>
 			</section>
 
 			<section>
@@ -158,11 +162,12 @@
 					The Service depends on third-party providers, including OpenAI for AI operations, Google
 					for sign-in and Google One Tap, Neon-hosted PostgreSQL for database storage, Resend for
 					transactional emails, PostHog for optional product analytics, Vercel for hosting,
-					infrastructure, and private Blob storage, Cloudflare for optional Web Analytics and asset
-					delivery, Sentry for error and performance monitoring, Stripe for payments and taxes, Mem0
-					for optional tutor memory, and Upstash for short-lived service controls and vector memory
-					storage. Those providers may process data according to their own terms and privacy
-					policies. We are not responsible for third-party services that we do not control.
+					infrastructure, AI Gateway, and private Blob storage, SpaceXAI for Coach dictation
+					transcription, Cloudflare for optional Web Analytics and asset delivery, Sentry for error
+					and performance monitoring, Stripe for payments and taxes, Mem0 for optional tutor memory,
+					and Upstash for short-lived service controls and vector memory storage. Those providers
+					may process data according to their own terms and privacy policies. We are not responsible
+					for third-party services that we do not control.
 				</p>
 			</section>
 
