@@ -6,11 +6,25 @@ import type {
 } from '#lib/question-bank/mcq/types.js';
 
 export const POOL_WARMING_CODE = 'POOL_WARMING' as const;
+export const INSUFFICIENT_QUESTIONS_CODE = 'INSUFFICIENT_QUESTIONS' as const;
+export const FOLLOW_UP_EMPTY_CODE = 'FOLLOW_UP_EMPTY' as const;
 
 export type PoolWarmingResponse = {
 	code: typeof POOL_WARMING_CODE;
 	error: string;
 	retryAfterSeconds: number;
+};
+
+export type InsufficientQuestionsResponse = {
+	code: typeof INSUFFICIENT_QUESTIONS_CODE;
+	error: string;
+	availableCount: number;
+};
+
+export type FollowUpEmptyResponse = {
+	code: typeof FOLLOW_UP_EMPTY_CODE;
+	error: string;
+	availableCount: number;
 };
 
 export type QuestionApiResponse = Record<string, unknown> & {
@@ -32,6 +46,27 @@ export function isPoolWarmingResponse(payload: unknown): payload is PoolWarmingR
 		typeof obj.retryAfterSeconds === 'number' &&
 		Number.isFinite(obj.retryAfterSeconds)
 	);
+}
+
+function readAvailableCount(payload: Record<string, unknown>): number | null {
+	return typeof payload.availableCount === 'number' && Number.isFinite(payload.availableCount)
+		? Math.max(0, Math.floor(payload.availableCount))
+		: null;
+}
+
+export function isInsufficientQuestionsResponse(
+	payload: unknown
+): payload is InsufficientQuestionsResponse {
+	if (!payload || typeof payload !== 'object') return false;
+	const obj = payload as Record<string, unknown>;
+	const availableCount = readAvailableCount(obj);
+	return obj.code === INSUFFICIENT_QUESTIONS_CODE && availableCount !== null;
+}
+
+export function isFollowUpEmptyResponse(payload: unknown): payload is FollowUpEmptyResponse {
+	if (!payload || typeof payload !== 'object') return false;
+	const obj = payload as Record<string, unknown>;
+	return obj.code === FOLLOW_UP_EMPTY_CODE;
 }
 
 export function parseQuestionParagraphs(value: unknown): string[] {

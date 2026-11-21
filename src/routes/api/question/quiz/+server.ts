@@ -9,6 +9,11 @@ import {
 	requestQuizRefill
 } from '#lib/question-bank/mcq/quiz-assembler.server.js';
 import { generatedQuestionToMcqAnswerBody } from '#lib/question-bank/mcq/public-payload.server.js';
+import {
+	FOLLOW_UP_EMPTY_CODE,
+	INSUFFICIENT_QUESTIONS_CODE,
+	POOL_WARMING_CODE
+} from '#lib/question-bank/mcq/payload.js';
 import { logger } from '#lib/server/logger.js';
 
 export const config = { maxDuration: 15 };
@@ -145,12 +150,23 @@ export const POST: RequestHandler = async (event) => {
 					logger.warn('Quiz pool refill request failed', { course, unit, refillError });
 				}
 			}
+			if (error.code === FOLLOW_UP_EMPTY_CODE) {
+				return Response.json(
+					{
+						code: FOLLOW_UP_EMPTY_CODE,
+						error: error.message,
+						refillRequested,
+						availableCount: error.availableCount
+					},
+					{ status: 400 }
+				);
+			}
 			// Some questions exist but not enough for the requested count → client error.
 			// Empty pool stays 503 POOL_WARMING so clients can retry while refill runs.
 			if (error.availableCount > 0) {
 				return Response.json(
 					{
-						code: 'INSUFFICIENT_QUESTIONS',
+						code: INSUFFICIENT_QUESTIONS_CODE,
 						error: error.message,
 						refillRequested,
 						availableCount: error.availableCount
@@ -160,7 +176,7 @@ export const POST: RequestHandler = async (event) => {
 			}
 			return Response.json(
 				{
-					code: 'POOL_WARMING',
+					code: POOL_WARMING_CODE,
 					error: error.message,
 					retryAfterSeconds: 20,
 					refillRequested,
