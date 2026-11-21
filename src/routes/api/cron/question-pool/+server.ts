@@ -7,9 +7,20 @@ import { logger } from '#lib/server/logger.js';
 
 export const config = { maxDuration: 300 };
 
+const pacificHour = new Intl.DateTimeFormat('en-US', {
+	timeZone: 'America/Los_Angeles',
+	hour: 'numeric',
+	hourCycle: 'h23'
+});
+
 export const GET: RequestHandler = async ({ request }) => {
 	if (!isAuthorizedCronRequest(request, CRON_SECRET)) {
 		return Response.json({ message: 'Unauthorized' }, { status: 401 });
+	}
+
+	// Vercel schedules in UTC. Ignore the other season's slots before touching the database.
+	if (![8, 12, 16, 20].includes(Number(pacificHour.format(new Date())))) {
+		return Response.json({ skipped: 'Outside question-pool refill hours' });
 	}
 
 	try {
