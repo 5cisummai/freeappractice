@@ -191,6 +191,8 @@ it('shows a weekly plan through its seventh calendar day and excludes tasks from
 		}))
 	};
 
-	expect(studyPlanForDay(plan, '2026-08-16')?.tasks.map((task) => task.date)).toEqual(['2026-08-16']);
+	expect(studyPlanForDay(plan, '2026-08-16')?.tasks.map((task) => task.date)).toEqual([
+		'2026-08-16'
+	]);
 	expect(studyPlanForDay(plan, '2026-08-17')).toBeNull();
 });

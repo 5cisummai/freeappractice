@@ -131,7 +131,9 @@
 		{/if}
 
 		<Card.Root class="mb-5 py-0 shadow-none">
-			<Card.Content class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5">
+			<Card.Content
+				class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5"
+			>
 				<div class="flex items-center gap-3">
 					<div
 						class="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
@@ -272,7 +274,9 @@
 			</Card.Root>
 		{:else}
 			<Card.Root class="py-0 shadow-none">
-				<Card.Content class="flex flex-wrap items-center gap-x-3 gap-y-1 p-4 text-sm text-muted-foreground sm:px-5">
+				<Card.Content
+					class="flex flex-wrap items-center gap-x-3 gap-y-1 p-4 text-sm text-muted-foreground sm:px-5"
+				>
 					This plan has no tasks yet. Ask Pip to update your weekly plan.
 					<Button href="/app/coach" variant="link" size="sm" class="h-auto p-0">Open Pip</Button>
 				</Card.Content>

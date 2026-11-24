@@ -695,7 +695,7 @@
 
 		<div
 			class={cn(
-				'mx-auto flex w-full max-w-3xl flex-col transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none px-4 sm:px-8',
+				'mx-auto flex w-full max-w-3xl flex-col px-4 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-8',
 				emptyChat ? 'min-h-0 flex-1 justify-center pb-10 sm:pb-16' : 'shrink-0 pb-4 sm:pb-6'
 			)}
 		>

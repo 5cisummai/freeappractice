@@ -57,7 +57,11 @@
 									isActive={page.url.pathname === resolve('app/settings') && hash === id}
 								>
 									{#snippet child({ props })}
-										<a href={resolve('app/settings') + '#' + id} onclick={() => sidebar.setOpenMobile(false)} {...props}>
+										<a
+											href={resolve(`app/settings#${id}`)}
+											onclick={() => sidebar.setOpenMobile(false)}
+											{...props}
+										>
 											<Icon aria-hidden="true" />
 											<span>{label}</span>
 										</a>

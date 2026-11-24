@@ -20,7 +20,9 @@
 	} = $props();
 </script>
 
-<div class={cn('mx-auto w-full max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-12 lg:px-10', className)}>
+<div
+	class={cn('mx-auto w-full max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-12 lg:px-10', className)}
+>
 	<header class="flex items-start justify-between gap-4">
 		<div class="min-w-0 space-y-2">
 			<h1
