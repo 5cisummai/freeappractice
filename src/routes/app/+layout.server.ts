@@ -20,18 +20,21 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname + url.search)}`);
 	}
 
+	const isOnboarding = url.pathname.endsWith('/onboarding');
+	const isInvite = url.pathname.startsWith('/app/invite/');
+
 	if (url.searchParams.get('signup') === 'google') {
 		// Idempotent: user.create.after already set this; keep for older sessions / race safety.
 		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', ONBOARDING_PENDING_COOKIE_OPTIONS);
-		if (!url.pathname.startsWith('/app/invite/')) {
-			throw redirect(303, '/app/onboarding');
+		if (!isInvite && !isOnboarding) {
+			throw redirect(303, '/app/onboarding?signup=google');
 		}
 	}
 
 	const onboardingState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
-	const isInvite = url.pathname.startsWith('/app/invite/');
-	if (onboardingState.status === 'pending' && !url.pathname.endsWith('/onboarding') && !isInvite) {
-		throw redirect(303, '/app/onboarding');
+	if (onboardingState.status === 'pending' && !isOnboarding && !isInvite) {
+		const authQuery = url.searchParams.get('login') === 'google' ? '?login=google' : '';
+		throw redirect(303, `/app/onboarding${authQuery}`);
 	}
 
 	const userId = locals.userId!;

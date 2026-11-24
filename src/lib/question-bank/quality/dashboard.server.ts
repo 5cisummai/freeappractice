@@ -156,6 +156,8 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 				questionId: questionQuality.questionId,
 				course: sql<string | null>`coalesce(${questionQuality.course}, ${questionRegistry.course})`,
 				unit: sql<string | null>`coalesce(${questionQuality.unit}, ${questionRegistry.unit})`,
+				questionCreatedAt: sql<Date | null>`coalesce(${questionRegistry.questionCreatedAt}, ${questionQuality.sourceCreatedAt})`,
+				registryCreatedAt: questionRegistry.createdAt,
 				feedbackPriority: questionQuality.feedbackPriority,
 				blindHumanReview: questionQuality.blindHumanReview,
 				aiAssessment: questionQuality.aiAssessment,
@@ -189,6 +191,8 @@ export async function getQualityDashboardSnapshot(): Promise<QualityDashboardSna
 				questionId: quality.questionId,
 				course: quality.course ?? question?.course,
 				unit: quality.unit ?? question?.unit,
+				createdAt:
+					quality.questionCreatedAt ?? question?.createdAt ?? quality.registryCreatedAt ?? null,
 				stimulus:
 					typeof raw?.stimulus === 'string'
 						? raw.stimulus

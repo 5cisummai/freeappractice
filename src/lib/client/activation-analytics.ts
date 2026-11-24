@@ -51,6 +51,7 @@ const ACTIVATION_JOURNEY_KEY = 'ph_activation_journey_key';
 const FIRST_ANSWER_FLAG_KEY = 'ph_activation_first_answer_sent';
 const LAST_AUTH_VISIT_DAY_KEY = 'ph_last_auth_visit_day';
 let firstAnswerCapturedThisSession = false;
+let signupCompletedCapturedThisSession = false;
 let userLoggedInCapturedThisSession = false;
 /** In-memory journey key so pre-consent queued events can still join the funnel. */
 let memoryJourneyKey: string | undefined;
@@ -200,7 +201,10 @@ export function captureSignupStarted(method?: 'email' | 'google' | 'page'): void
 }
 
 export function captureSignupCompleted(method: 'email' | 'google' | 'google_one_tap'): void {
+	if (signupCompletedCapturedThisSession) return;
+	signupCompletedCapturedThisSession = true;
 	captureActivation(ACTIVATION_EVENTS.signupCompleted, { method });
+	capturePostHogEvent('user_signed_up', { method });
 }
 
 /** Once per JS session — Google OAuth/One Tap/email must not double-fire on remounts. */
@@ -250,6 +254,7 @@ export function captureAuthenticatedStudentReturnedIfNeeded(): void {
 /** Test-only: reset module session state between vitest cases. */
 export function resetActivationAnalyticsForTests(): void {
 	firstAnswerCapturedThisSession = false;
+	signupCompletedCapturedThisSession = false;
 	userLoggedInCapturedThisSession = false;
 	memoryJourneyKey = undefined;
 }

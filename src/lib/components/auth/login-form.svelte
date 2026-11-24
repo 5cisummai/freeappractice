@@ -17,6 +17,7 @@
 	import { requestVerificationEmail } from '#lib/auth/request-verification-email.js';
 	import { authCallbackUrl, authCallbackUrlForAppPath, safeAppPath } from '#lib/auth/urls.js';
 	import { page } from '$app/state';
+	import { getSiteUrl } from '#lib/site-url.js';
 	import GoogleLogo from '#lib/components/auth/google-logo.svelte';
 	import { captureUserLoggedIn } from '#lib/client/activation-analytics.js';
 	import { identifyPostHogUser } from '#lib/client/posthog-analytics.js';
@@ -101,9 +102,16 @@
 		try {
 			const googleCallback = new URL(callbackURL);
 			googleCallback.searchParams.set('login', 'google');
+			const googleNewUserCallback = new URL(
+				redirectPath.startsWith('/app/invite/') || redirectPath === '/app/mobile-auth'
+					? `${getSiteUrl()}${redirectPath}`
+					: authCallbackUrl('app')
+			);
+			googleNewUserCallback.searchParams.set('signup', 'google');
 			const { error } = await authClient.signIn.social({
 				provider: 'google',
 				callbackURL: googleCallback.toString(),
+				newUserCallbackURL: googleNewUserCallback.toString(),
 				errorCallbackURL: authCallbackUrl('login')
 			});
 			if (error) {

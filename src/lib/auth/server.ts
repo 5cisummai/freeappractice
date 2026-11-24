@@ -105,7 +105,12 @@ export const auth = betterAuth({
 						// No request event (e.g. background path) — age gate still covers these users.
 					}
 					captureAnonymousServerMetric('account_created', {
-						method: classifyAccountCreationMethod(context?.path),
+						method: classifyAccountCreationMethod({
+							path: context?.path,
+							params: context?.params as Record<string, unknown> | undefined,
+							body: context?.body,
+							requestUrl: context?.request?.url
+						}),
 						email_verified_at_creation: user.emailVerified,
 						source: 'better_auth'
 					});
