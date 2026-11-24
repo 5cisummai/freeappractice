@@ -21,7 +21,6 @@
 	import Loader2Icon from '@tabler/icons-svelte/icons/loader-2';
 	import PencilIcon from '@tabler/icons-svelte/icons/pencil-filled';
 
-	import SidebarCloseIcon from '@tabler/icons-svelte/icons/x';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Conversation from '#lib/components/ai-elements/conversation/index.js';
 
@@ -41,10 +40,7 @@
 	import { persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
 	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
 	import { createAgentTransport } from '#lib/agent/transport.js';
-	import {
-		useCoachPageToolbar,
-		useCoachSidebar
-	} from '#lib/components/agent/coach-context.svelte.js';
+	import { useCoachPageToolbar } from '#lib/components/agent/coach-context.svelte.js';
 	import {
 		coachComposerActions,
 		formatCoachComposerMessage,
@@ -60,12 +56,6 @@
 	import type { CoachQuestionToolOutput } from '#lib/agent/tools/question.js';
 	import { toast } from 'svelte-sonner';
 
-	type CoachShellProps = {
-		surface?: 'page' | 'sidebar';
-	};
-
-	let { surface = 'page' }: CoachShellProps = $props();
-	const coachSidebar = useCoachSidebar();
 	const coachPageToolbar = useCoachPageToolbar();
 
 	let sessionId = $state('');
@@ -257,7 +247,7 @@
 			.catch(() => undefined);
 		clientReady = true;
 		const url = new URL(window.location.href);
-		const query = surface === 'page' ? (url.searchParams.get('q')?.trim() ?? '') : '';
+		const query = url.searchParams.get('q')?.trim() ?? '';
 		sessionId = query
 			? crypto.randomUUID()
 			: (sessionStorage.getItem(COACH_SESSION_STORAGE_KEY) ?? crypto.randomUUID());
@@ -289,7 +279,6 @@
 	});
 
 	$effect(() => {
-		if (surface !== 'page') return;
 		coachPageToolbar.snippet = pageToolbar;
 		return () => {
 			coachPageToolbar.snippet = null;
@@ -647,28 +636,8 @@
 	</div>
 {/snippet}
 
-<div
-	class={cn(
-		'flex min-h-0 flex-col overflow-hidden',
-		surface === 'page' ? 'h-[calc(100svh-4rem)] md:h-[calc(100svh-5rem)]' : 'h-full min-h-0'
-	)}
->
+<div class="flex h-[calc(100svh-4rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100svh-5rem)]">
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-		{#if surface === 'sidebar'}
-			<div class="mx-auto flex w-full max-w-3xl justify-end gap-2 px-2 pt-3">
-				{@render conversationControls()}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					class="rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-					aria-label="Close Pip sidebar"
-					title="Close Pip sidebar"
-					onclick={() => coachSidebar.toggle()}
-				>
-					<SidebarCloseIcon aria-hidden="true" />
-				</Button>
-			</div>
-		{/if}
 		<div
 			class={cn(
 				'relative min-h-0 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
@@ -682,10 +651,7 @@
 				>
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
-							class={cn(
-								'@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain pt-8 pb-6 sm:pt-10',
-								surface === 'page' ? 'px-4 sm:px-8' : 'px-2'
-							)}
+							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
 							aria-live="polite"
 						>
 							<CoachMessages
@@ -729,8 +695,7 @@
 
 		<div
 			class={cn(
-				'mx-auto flex w-full max-w-3xl flex-col transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none',
-				surface === 'page' ? 'px-4 sm:px-8' : 'px-2',
+				'mx-auto flex w-full max-w-3xl flex-col px-4 transition-[padding] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:px-8',
 				emptyChat ? 'min-h-0 flex-1 justify-center pb-10 sm:pb-16' : 'shrink-0 pb-4 sm:pb-6'
 			)}
 		>
@@ -785,6 +750,10 @@
 					/>
 				{/key}
 
+				<p class="mt-2 text-center text-[11px] text-muted-foreground">
+					Pip is an AI study assistant and can make mistakes.
+				</p>
+
 				{#if emptyChat}
 					<ul
 						class="mt-5 w-full space-y-0.5 px-1 sm:mt-6 sm:px-2"
@@ -807,13 +776,6 @@
 							</li>
 						{/each}
 					</ul>
-				{:else}
-					<p
-						class="mt-2 text-center text-[11px] text-muted-foreground"
-						in:fade={{ duration: motionMs * 0.5, delay: motionMs * 0.25, easing: cubicOut }}
-					>
-						Pip is powered by AI and can make mistakes.
-					</p>
 				{/if}
 			{/if}
 		</div>

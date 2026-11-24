@@ -97,6 +97,7 @@ export interface HumanReviewItem {
 	questionId: string;
 	course?: string;
 	unit?: string;
+	createdAt?: Date | string | null;
 	stimulus?: string;
 	question?: string;
 	options?: Record<string, string>;

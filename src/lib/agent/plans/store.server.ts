@@ -34,6 +34,19 @@ export function addStudyPlanDays(weekStart: string, dayOffset: number): string {
 	return date.toISOString().slice(0, 10);
 }
 
+/** Select the weekly schedule shown in the web UI without altering the stored plan. */
+export function studyPlanForDay(plan: StudyPlanView | null, today: string): StudyPlanView | null {
+	if (!plan) return null;
+	const startsOn = plan.startsOn.slice(0, 10);
+	const endsOn = addStudyPlanDays(startsOn, 6);
+	if (today > endsOn) return null;
+
+	return {
+		...plan,
+		tasks: plan.tasks.filter((task) => task.date.slice(0, 10) >= startsOn)
+	};
+}
+
 export class StudyPlansLockedError extends Error {
 	constructor(message = 'Study plans are unavailable without active access') {
 		super(message);

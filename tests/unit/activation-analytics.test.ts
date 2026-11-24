@@ -3,10 +3,12 @@ import { ANALYTICS_CONSENT_KEY } from '#lib/client/analytics-consent.js';
 import {
 	captureFirstAnswerSubmitted,
 	captureLandingPageViewed,
+	captureSignupCompleted,
 	captureUserLoggedIn,
 	persistActivationAnalyticsAfterConsent,
 	resetActivationAnalyticsForTests
 } from '#lib/client/activation-analytics.js';
+import { classifyAccountCreationMethod } from '#lib/auth/analytics.js';
 
 const { capturePostHogEvent } = vi.hoisted(() => ({
 	capturePostHogEvent: vi.fn()
@@ -132,5 +134,44 @@ describe('captureUserLoggedIn', () => {
 
 		expect(capturePostHogEvent).toHaveBeenCalledTimes(1);
 		expect(capturePostHogEvent).toHaveBeenCalledWith('user_logged_in', { method: 'google' });
+	});
+});
+
+describe('captureSignupCompleted', () => {
+	it('fires both signup_completed and user_signed_up once per session', () => {
+		vi.stubGlobal('crypto', { randomUUID: () => 'journey-signup-key' });
+		vi.stubGlobal('window', { localStorage: createStorage() });
+
+		captureSignupCompleted('google');
+		captureSignupCompleted('google');
+
+		expect(capturePostHogEvent).toHaveBeenCalledTimes(2);
+		expect(capturePostHogEvent).toHaveBeenNthCalledWith(1, 'signup_completed', {
+			method: 'google',
+			journey_key: 'journey-signup-key'
+		});
+		expect(capturePostHogEvent).toHaveBeenNthCalledWith(2, 'user_signed_up', {
+			method: 'google'
+		});
+	});
+});
+
+describe('classifyAccountCreationMethod', () => {
+	it.each([
+		[{ path: '/sign-up/email' }, 'email'],
+		[{ path: '/one-tap/callback' }, 'google_one_tap'],
+		[{ path: '/callback/google' }, 'google'],
+		[{ path: '/callback/:id', params: { id: 'google' } }, 'google'],
+		[{ path: '/callback/:id', params: { id: 'apple' } }, 'apple'],
+		[
+			{ path: '/callback/:id', requestUrl: 'https://freeappractice.org/api/auth/callback/google' },
+			'google'
+		],
+		[{ path: '/sign-in/social', body: { provider: 'google' } }, 'google'],
+		[{ path: '/sign-in/social', body: { provider: 'apple' } }, 'apple'],
+		[{ path: '/other' }, 'unknown'],
+		[undefined, 'unknown']
+	] as const)('classifies %j as %s', (input, expected) => {
+		expect(classifyAccountCreationMethod(input)).toBe(expected);
 	});
 });

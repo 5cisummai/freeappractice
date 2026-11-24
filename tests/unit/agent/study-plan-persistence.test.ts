@@ -50,6 +50,7 @@ vi.mock('#lib/question-bank/util.server.js', () => ({
 import {
 	addStudyPlanDays,
 	saveStudyPlan,
+	studyPlanForDay,
 	StudyPlanConflictError
 } from '#lib/agent/plans/store.server.js';
 
@@ -172,4 +173,26 @@ describe('study-plan persistence', () => {
 		}
 		expect(mocks.batch).toHaveBeenCalledOnce();
 	});
+});
+
+it('shows a weekly plan through its seventh calendar day and excludes tasks from earlier plans', () => {
+	const plan = {
+		...existingPlan,
+		startsOn: existingPlan.startsOn.toISOString(),
+		updatedAt: existingPlan.updatedAt.toISOString(),
+		tasks: (['2026-08-09', '2026-08-16'] as const).map((date) => ({
+			id: date,
+			date,
+			course: 'AP Biology',
+			unit: 'Unit 1',
+			mode: 'mcq' as const,
+			durationMinutes: 10,
+			status: 'todo' as const
+		}))
+	};
+
+	expect(studyPlanForDay(plan, '2026-08-16')?.tasks.map((task) => task.date)).toEqual([
+		'2026-08-16'
+	]);
+	expect(studyPlanForDay(plan, '2026-08-17')).toBeNull();
 });

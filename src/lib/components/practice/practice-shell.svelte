@@ -29,6 +29,7 @@
 	};
 	export type PracticeQuizConfig = {
 		count?: number;
+		showTimer?: boolean;
 		persistHistory?: boolean;
 		sharedQuiz?: SharedQuizView | null;
 	};
@@ -286,6 +287,7 @@
 							requestVersion={sharedQuiz ? requestVersion : quizRequestVersion}
 							bind:isGenerating={quizGenerating}
 							persistHistory={persistQuizHistory}
+							showTimer={quiz.showTimer}
 							showCoachReview={tutorMode !== 'hidden'}
 							initialQuestions={sharedQuiz?.questions ?? null}
 							sharedSlug={sharedQuiz?.slug ?? ''}

@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { invalidateAuthenticatedShell } from '#lib/client/invalidate-data.js';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
-	import * as Card from '#lib/components/ui/card/index.js';
-	import * as DropdownMenu from '#lib/components/ui/dropdown-menu/index.js';
 	import * as Popover from '#lib/components/ui/popover/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { Switch } from '#lib/components/ui/switch/index.js';
-	import * as Tabs from '#lib/components/ui/tabs/index.js';
-	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import * as Select from '#lib/components/ui/select/index.js';
+	import * as Card from '#lib/components/ui/card/index.js';
+	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
+	import * as Progress from '#lib/components/ui/progress/index.js';
 	import PageShell from '#lib/components/layout/page-shell.svelte';
 	import HintCard from '#lib/components/onboarding/hint-card.svelte';
 	import { authClient } from '#lib/auth/client.js';
@@ -23,12 +23,11 @@
 	import { resetPostHogUser } from '#lib/client/posthog-analytics.js';
 	import { onboardingCourseGroups } from '#lib/onboarding-courses.js';
 	import { SUPER_GRADIENT_BUTTON_CLASS } from '#lib/components/agent/ui.js';
-	const APP_VERSION = '1.10.9';
+	const APP_VERSION = '1.10.10';
 	import CheckIcon from '@tabler/icons-svelte/icons/check';
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import { userPrefersMode } from 'mode-watcher';
 	import { toast } from 'svelte-sonner';
-	import SelectorIcon from '@tabler/icons-svelte/icons/selector';
 	import LaptopIcon from '@tabler/icons-svelte/icons/device-laptop';
 	import MoonIcon from '@tabler/icons-svelte/icons/moon-filled';
 	import SunIcon from '@tabler/icons-svelte/icons/sun-filled';
@@ -56,6 +55,10 @@
 	};
 
 	let activeSection = $state<SettingsSection>('practice');
+	let defaultMode = $state(untrack(() => data.defaultPracticeMode));
+	let quizCount = $state(untrack(() => String(data.defaultQuizCount)));
+	let showQuizTimer = $state(untrack(() => data.showQuizTimer));
+	let classesOpen = $state(untrack(() => Boolean(form?.courseError)));
 	let deleteAccountOpen = $state(false);
 	let clearPracticeOpen = $state(false);
 	let accountForm = $state({ name: '', email: '' });
@@ -64,10 +67,7 @@
 	let billingBusy = $state(false);
 	let claimingFreeBeta = $state(false);
 
-	const theme = $derived(userPrefersMode.current);
-	const themeLabel = $derived(
-		theme === 'light' || theme === 'dark' || theme === 'system' ? THEME_LABELS[theme] : 'System'
-	);
+	const theme = $derived(userPrefersMode.current ?? 'system');
 	const selectedCourses = $derived(new Set(data.selectedCourses));
 
 	function courseId(course: string): string {
@@ -83,22 +83,18 @@
 		return 'practice';
 	}
 
-	function syncHash(section: SettingsSection) {
-		history.replaceState(null, '', `#${section}`);
-	}
-
 	function handleSectionChange(value: string | undefined) {
 		if (!value || !SECTIONS.some((section) => section.id === value)) return;
-		activeSection = value as SettingsSection;
-		syncHash(activeSection);
+		window.location.hash = value;
 	}
 
 	onMount(() => {
 		accountForm = { name: data.user.name, email: data.user.email };
-
 		const hash = window.location.hash.slice(1);
 		activeSection = sectionFromHash(hash);
-		syncHash(activeSection);
+		if (hash === 'danger' || hash === 'tutor-memory') {
+			window.location.hash = activeSection;
+		}
 	});
 
 	function onThemeChange(value: string) {
@@ -201,440 +197,557 @@
 	}
 </script>
 
+<svelte:window
+	onhashchange={() => (activeSection = sectionFromHash(window.location.hash.slice(1)))}
+/>
+
 <svelte:head>
 	<title>Settings | Free AP Practice</title>
 </svelte:head>
 
-<PageShell title="Settings" description="Manage your account and preferences.">
-	<Tabs.Root
-		bind:value={activeSection}
-		onValueChange={handleSectionChange}
-		orientation="vertical"
-		class="flex-col items-start gap-6 sm:flex-row md:gap-8"
-	>
-		<Tabs.List
-			variant="line"
-			class="h-fit w-full shrink-0 sm:w-40 lg:w-44"
-			aria-label="Settings sections"
-		>
-			<Sidebar.Menu>
-				{#each SECTIONS as section (section.id)}
-					<Sidebar.MenuItem>
-						<Tabs.Trigger value={section.id} class="after:hidden">
-							{#snippet child({ props })}
-								<Sidebar.MenuButton {...props} isActive={activeSection === section.id}>
-									{section.label}
-								</Sidebar.MenuButton>
-							{/snippet}
-						</Tabs.Trigger>
-					</Sidebar.MenuItem>
-				{/each}
-			</Sidebar.Menu>
-		</Tabs.List>
+<PageShell title="Settings" description="Manage your account and preferences." class="max-w-3xl">
+	<div class="flex flex-col gap-10">
+		<div class="w-full sm:hidden">
+			<Select.Root type="single" value={activeSection} onValueChange={handleSectionChange}>
+				<Select.Trigger class="w-full" aria-label="Settings section">
+					{SECTIONS.find((section) => section.id === activeSection)?.label}
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Group>
+						{#each SECTIONS as section (section.id)}
+							<Select.Item value={section.id} label={section.label}>{section.label}</Select.Item>
+						{/each}
+					</Select.Group>
+				</Select.Content>
+			</Select.Root>
+		</div>
 
-		<Tabs.Content value="practice" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<form method="POST" action="?/updateCourses" class="space-y-4 px-4 py-4">
-					<div class="space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Classes</p>
-						<p class="text-sm text-muted-foreground">Choose the AP classes you want to practice.</p>
+		<section id="practice" aria-labelledby="settings-practice" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-practice" class="mb-4 text-lg leading-6 font-semibold tracking-tight">
+				Practice
+			</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div
+						class="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 py-4"
+					>
+						<div>
+							<p class="text-sm font-medium">Default practice mode</p>
+							<p class="text-sm text-muted-foreground">
+								Choose which format opens first on this device.
+							</p>
+						</div>
+						<Select.Root
+							type="single"
+							bind:value={defaultMode}
+							onValueChange={(value) => {
+								if (value === 'mcq' || value === 'frq')
+									document.cookie = `practice_default_mode=${value}; path=/; max-age=31536000; samesite=lax`;
+							}}
+						>
+							<Select.Trigger aria-label="Default practice mode"
+								>{defaultMode === 'frq' ? 'Free response' : 'Multiple choice'}</Select.Trigger
+							>
+							<Select.Content
+								><Select.Group>
+									<Select.Item value="mcq" label="Multiple choice">Multiple choice</Select.Item>
+									<Select.Item value="frq" label="Free response">Free response</Select.Item>
+								</Select.Group></Select.Content
+							>
+						</Select.Root>
 					</div>
-					<div class="space-y-5">
-						{#each onboardingCourseGroups as group (group.label)}
-							<section class="space-y-2" aria-labelledby={courseId(group.label)}>
-								<h2 id={courseId(group.label)} class="text-xs font-medium text-muted-foreground">
-									{group.label}
-								</h2>
-								<div class="grid gap-2 sm:grid-cols-2">
-									{#each group.courses as course (course.name)}
-										{@const id = courseId(course.name)}
-										{@const CourseIcon = course.icon}
-										<div>
-											<input
-												{id}
-												type="checkbox"
-												name="courses"
-												value={course.name}
-												class="peer sr-only"
-												checked={selectedCourses.has(course.name)}
-											/>
-											<label
-												for={id}
-												class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:grayscale-0 peer-checked:[&_.selection-check]:opacity-100"
+					<div
+						class="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 py-4"
+					>
+						<div>
+							<p class="text-sm font-medium">Default quiz length</p>
+							<p class="text-sm text-muted-foreground">
+								Choose how many questions to request on this device.
+							</p>
+						</div>
+						<Select.Root
+							type="single"
+							bind:value={quizCount}
+							onValueChange={(value) => {
+								if (value)
+									document.cookie = `practice_quiz_count=${value}; path=/; max-age=31536000; samesite=lax`;
+							}}
+						>
+							<Select.Trigger aria-label="Default quiz length">{quizCount} questions</Select.Trigger
+							>
+							<Select.Content
+								><Select.Group>
+									{#each [5, 10, 15, 20, 25, 50] as count (count)}
+										<Select.Item value={String(count)} label={`${count} questions`}
+											>{count} questions</Select.Item
+										>
+									{/each}
+								</Select.Group></Select.Content
+							>
+						</Select.Root>
+					</div>
+					<div class="flex items-center justify-between gap-4 border-b border-border/60 py-4">
+						<div>
+							<Label for="show-quiz-timer">Show quiz timer</Label>
+							<p class="text-sm text-muted-foreground">
+								Display elapsed time in graded quizzes on this device.
+							</p>
+						</div>
+						<Switch
+							id="show-quiz-timer"
+							bind:checked={showQuizTimer}
+							onCheckedChange={(checked) => {
+								document.cookie = `practice_hide_quiz_timer=${checked ? '0' : '1'}; path=/; max-age=31536000; samesite=lax`;
+							}}
+						/>
+					</div>
+					<Collapsible.Root bind:open={classesOpen}>
+						<div class="flex flex-wrap items-center justify-between gap-4 py-4">
+							<div class="min-w-0 flex-1">
+								<p class="text-sm font-medium">Classes</p>
+								<p class="text-sm text-muted-foreground">
+									{data.selectedCourses.join(', ') || 'No classes selected'}
+								</p>
+							</div>
+							<Collapsible.Trigger>
+								{#snippet child({ props })}
+									<Button {...props} type="button" variant="outline" size="sm">
+										{classesOpen ? 'Hide class picker' : 'Manage classes'}
+									</Button>
+								{/snippet}
+							</Collapsible.Trigger>
+						</div>
+						<Collapsible.Content>
+							<form method="POST" action="?/updateCourses" class="space-y-4 pb-4">
+								<div class="space-y-5">
+									{#each onboardingCourseGroups as group (group.label)}
+										<section class="space-y-2" aria-labelledby={courseId(group.label)}>
+											<h3
+												id={courseId(group.label)}
+												class="text-xs font-medium text-muted-foreground"
 											>
-												<span
-													class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md grayscale {course.iconClass}"
-												>
-													<CourseIcon class="size-4" />
-												</span>
-												<span class="min-w-0 flex-1 leading-tight font-medium">{course.name}</span>
-												<CheckIcon
-													class="selection-check size-4 shrink-0 text-primary opacity-0"
-													aria-hidden="true"
-												/>
-											</label>
-										</div>
+												{group.label}
+											</h3>
+											<div class="grid gap-2 sm:grid-cols-2">
+												{#each group.courses as course (course.name)}
+													{@const id = courseId(course.name)}
+													{@const CourseIcon = course.icon}
+													<div>
+														<input
+															{id}
+															type="checkbox"
+															name="courses"
+															value={course.name}
+															class="peer sr-only"
+															checked={selectedCourses.has(course.name)}
+														/>
+														<label
+															for={id}
+															class="flex min-h-14 cursor-pointer items-center gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 text-sm transition-colors peer-checked:border-primary peer-checked:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring hover:border-primary/50 hover:bg-primary/5 peer-checked:[&_.course-icon]:grayscale-0 peer-checked:[&_.selection-check]:opacity-100"
+														>
+															<span
+																class="course-icon flex size-8 shrink-0 items-center justify-center rounded-md grayscale {course.iconClass}"
+															>
+																<CourseIcon class="size-4" />
+															</span>
+															<span class="min-w-0 flex-1 leading-tight font-medium"
+																>{course.name}</span
+															>
+															<CheckIcon
+																class="selection-check size-4 shrink-0 text-primary opacity-0"
+																aria-hidden="true"
+															/>
+														</label>
+													</div>
+												{/each}
+											</div>
+										</section>
 									{/each}
 								</div>
-							</section>
-						{/each}
-					</div>
-					{#if form?.courseError}
-						<p class="text-sm text-destructive" role="alert">{form.courseError}</p>
-					{/if}
-					<div class="flex justify-end">
-						<Button type="submit" size="sm">Save classes</Button>
-					</div>
-				</form>
-				<div class="border-t border-border/60"></div>
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Clear practice data</p>
-						<p class="text-sm text-muted-foreground">
-							Delete question history, mastery progress, bookmarks, and FRQ submissions. Your
-							account stays signed in.
-						</p>
-					</div>
-					<Button
-						type="button"
-						variant="destructive"
-						size="sm"
-						onclick={() => (clearPracticeOpen = true)}>Clear</Button
-					>
-				</div>
-			</Card.Root>
-		</Tabs.Content>
-
-		<Tabs.Content value="appearance" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Theme</p>
-						<p class="text-sm text-muted-foreground">Light, dark, or match your system setting.</p>
-					</div>
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger>
-							{#snippet child({ props })}
-								<Button
-									{...props}
-									variant="outline"
-									size="sm"
-									class="min-w-28 justify-between gap-2"
-								>
-									<span class="flex items-center gap-2">
-										{#if theme === 'dark'}
-											<MoonIcon class="size-3.5" />
-										{:else if theme === 'light'}
-											<SunIcon class="size-3.5" />
-										{:else}
-											<LaptopIcon class="size-3.5" />
-										{/if}
-										{themeLabel}
-									</span>
-									<SelectorIcon class="size-3.5 opacity-60" />
-								</Button>
-							{/snippet}
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content align="end" class="min-w-36">
-							<DropdownMenu.RadioGroup value={theme} onValueChange={onThemeChange}>
-								<DropdownMenu.RadioItem value={'light' satisfies Theme}>
-									<SunIcon />
-									Light
-								</DropdownMenu.RadioItem>
-								<DropdownMenu.RadioItem value={'dark' satisfies Theme}>
-									<MoonIcon />
-									Dark
-								</DropdownMenu.RadioItem>
-								<DropdownMenu.RadioItem value={'system' satisfies Theme}>
-									<LaptopIcon />
-									System
-								</DropdownMenu.RadioItem>
-							</DropdownMenu.RadioGroup>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-				</div>
-			</Card.Root>
-		</Tabs.Content>
-
-		<Tabs.Content value="privacy" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Analytics</p>
-						<p class="text-sm text-muted-foreground">
-							Allow optional product analytics, including feature usage and session replay. Vercel
-							Analytics always runs cookieless for aggregate traffic.
-						</p>
-					</div>
-					<Switch
-						id="analytics-toggle"
-						name="analytics"
-						checked={privacy.analyticsConsent === 'granted'}
-						onCheckedChange={(checked: boolean) =>
-							privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
-					/>
-				</div>
-			</Card.Root>
-		</Tabs.Content>
-
-		<Tabs.Content value="super" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<div class="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">
-							{data.planAccess.plan === 'super' ? 'Super plan' : 'Free plan'}
-						</p>
-						<p class="text-sm text-muted-foreground">
-							{#if data.billing?.billingIssue}
-								Payment needs attention. Open billing to update your payment method.
-							{:else if data.planAccess.plan === 'super'}
-								{#if data.freeBetaEnabled}
-									Super access is free during the beta after you claim the offer.
-								{:else if data.planAccess.accessReason === 'admin_grant'}
-									Super access granted by the team.
-								{:else if data.billing?.status === 'past_due'}
-									Payment is past due; Super access remains available during the grace period.
-								{:else}
-									Pip and personalized study plans are active.
+								{#if form?.courseError}
+									<p class="text-sm text-destructive" role="alert">{form.courseError}</p>
 								{/if}
-							{:else if data.freeBetaEnabled}
-								Claim your free Super offer for Pip and personalized study planning.
-							{:else}
-								Upgrade when you want Pip and personalized study planning.
-							{/if}
-						</p>
+								<div class="flex justify-end">
+									<Button type="submit" size="sm">Save classes</Button>
+								</div>
+							</form>
+						</Collapsible.Content>
+					</Collapsible.Root>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Clear practice data</p>
+							<p class="text-sm text-muted-foreground">
+								Delete question history, mastery progress, bookmarks, and FRQ submissions. Your
+								account stays signed in.
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="destructive"
+							size="sm"
+							onclick={() => (clearPracticeOpen = true)}>Clear</Button
+						>
 					</div>
-					{#if data.billing?.hasCustomer}
+				</Card.Content>
+			</Card.Root>
+		</section>
+
+		<section
+			id="appearance"
+			aria-labelledby="settings-appearance"
+			class="w-full min-w-0 scroll-mt-24"
+		>
+			<h2 id="settings-appearance" class="mb-4 text-lg leading-6 font-semibold tracking-tight">
+				Appearance
+			</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div class="flex items-center justify-between gap-4 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Theme</p>
+							<p class="text-sm text-muted-foreground">
+								Light, dark, or match your system setting.
+							</p>
+						</div>
+						<Select.Root type="single" value={theme} onValueChange={onThemeChange}>
+							<Select.Trigger aria-label="Theme">{THEME_LABELS[theme]}</Select.Trigger>
+							<Select.Content align="end">
+								<Select.Group>
+									<Select.Item value="light" label="Light">
+										<SunIcon aria-hidden="true" />
+										Light
+									</Select.Item>
+									<Select.Item value="dark" label="Dark">
+										<MoonIcon aria-hidden="true" />
+										Dark
+									</Select.Item>
+									<Select.Item value="system" label="System">
+										<LaptopIcon aria-hidden="true" />
+										System
+									</Select.Item>
+								</Select.Group>
+							</Select.Content>
+						</Select.Root>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		</section>
+
+		<section id="privacy" aria-labelledby="settings-privacy" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-privacy" class="mb-4 text-lg leading-6 font-semibold tracking-tight">
+				Privacy
+			</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div class="flex items-center justify-between gap-4 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Analytics</p>
+							<p class="text-sm text-muted-foreground">
+								Allow optional product analytics, including feature usage and session replay. Vercel
+								Analytics always runs cookieless for aggregate traffic.
+							</p>
+						</div>
+						<Switch
+							id="analytics-toggle"
+							name="analytics"
+							checked={privacy.analyticsConsent === 'granted'}
+							onCheckedChange={(checked: boolean) =>
+								privacy.setAnalyticsConsent(checked ? 'granted' : 'denied')}
+						/>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		</section>
+
+		<section id="super" aria-labelledby="settings-super" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-super" class="mb-4 text-lg leading-6 font-semibold tracking-tight">Super</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div class="flex flex-wrap items-center justify-between gap-4 py-4">
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">
+								{data.planAccess.plan === 'super' ? 'Super plan' : 'Free plan'}
+							</p>
+							<p class="text-sm text-muted-foreground">
+								{#if data.billing?.billingIssue}
+									Payment needs attention. Open billing to update your payment method.
+								{:else if data.planAccess.plan === 'super'}
+									{#if data.freeBetaEnabled}
+										Super access is free during the beta after you claim the offer.
+									{:else if data.planAccess.accessReason === 'admin_grant'}
+										Super access granted by the team.
+									{:else if data.billing?.status === 'past_due'}
+										Payment is past due; Super access remains available during the grace period.
+									{:else}
+										Pip and personalized study plans are active.
+									{/if}
+								{:else if data.freeBetaEnabled}
+									Claim your free Super offer for Pip and personalized study planning.
+								{:else}
+									Upgrade when you want Pip and personalized study planning.
+								{/if}
+							</p>
+						</div>
+						{#if data.billing?.hasCustomer}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onclick={manageBilling}
+								disabled={billingBusy}
+							>
+								{billingBusy ? 'Opening…' : 'Manage billing'}
+							</Button>
+						{:else if data.planAccess.plan !== 'super' && data.freeBetaEnabled}
+							<Button
+								type="button"
+								size="sm"
+								class="rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
+								onclick={claimFreeBeta}
+								disabled={claimingFreeBeta}
+							>
+								<SparklesIcon class="size-3.5" />
+								{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
+							</Button>
+						{:else if data.planAccess.plan !== 'super' && !data.billing?.billingIssue}
+							<Button type="button" variant="outline" size="sm" href={resolve('pricing')}
+								>Upgrade</Button
+							>
+						{/if}
+					</div>
+
+					{#if data.planAccess.plan === 'super'}
+						<div class="mb-4 space-y-3 rounded-xl bg-muted/50 p-4">
+							<div class="grid gap-3 sm:grid-cols-2">
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Status
+									</p>
+									<p class="mt-1 text-sm font-medium capitalize">
+										{data.billing?.status?.replaceAll('_', ' ') ?? 'Active'}
+									</p>
+								</div>
+								<div>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										{data.billing?.cancelAt || data.billing?.cancelAtPeriodEnd
+											? 'Cancels'
+											: 'Renews'}
+									</p>
+									<p class="mt-1 text-sm font-medium">
+										{formatDate(data.billing?.cancelAt ?? data.billing?.periodEnd)}
+									</p>
+								</div>
+							</div>
+							<div>
+								<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									Coach usage
+								</p>
+								{#if data.usage.status === 'available'}
+									<p class="mt-1 text-sm">
+										{data.usage.remainingCredits} of {data.usage.limitCredits} Coach credits remaining
+										this month.
+									</p>
+									<Progress.Root
+										class="mt-2"
+										value={data.usage.usedPercent}
+										aria-label="Monthly Coach credit usage"
+										aria-valuetext={`${data.usage.remainingCredits} of ${data.usage.limitCredits} credits remaining`}
+									/>
+									<p class="mt-1 text-xs text-muted-foreground">
+										Each turn uses credits based on AI usage. Web search adds 0.25 credits.
+									</p>
+									{#if data.usage.warning}
+										<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+											You have used {data.usage.warning}% of this month's Coach credits.
+										</p>
+									{/if}
+								{:else}
+									<p class="mt-1 text-sm text-muted-foreground">
+										Usage is unavailable right now. Try again later.
+									</p>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<div
+						class="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 py-4"
+					>
+						<div class="min-w-0 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Tutor memory</p>
+							<p class="text-sm text-muted-foreground">
+								Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. View all the memories
+								currently stored for your Tutor.
+							</p>
+						</div>
+
+						<Button type="button" variant="outline" size="sm" href={resolve('app/settings/memory')}
+							>View memories</Button
+						>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		</section>
+
+		<section id="advanced" aria-labelledby="settings-advanced" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-advanced" class="mb-4 text-lg leading-6 font-semibold tracking-tight">
+				Advanced
+			</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div class="flex items-center justify-between gap-4 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Reset onboarding</p>
+							<p class="text-sm text-muted-foreground">
+								Show the course selection screen again so you can test the onboarding flow.
+							</p>
+						</div>
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
-							onclick={manageBilling}
-							disabled={billingBusy}
+							href={resolve('app/onboarding?reset=1')}>Reset</Button
 						>
-							{billingBusy ? 'Opening…' : 'Manage billing'}
-						</Button>
-					{:else if data.planAccess.plan !== 'super' && data.freeBetaEnabled}
+					</div>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="min-w-0 flex-1 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Preview hint card</p>
+							<p class="text-sm text-muted-foreground">
+								Open the feature hint popover to check layout and copy.
+							</p>
+						</div>
+						<Popover.Root>
+							<Popover.Trigger>
+								{#snippet child({ props })}
+									<Button type="button" variant="outline" size="sm" {...props}
+										>Show hint card</Button
+									>
+								{/snippet}
+							</Popover.Trigger>
+							<HintCard
+								side="bottom"
+								align="end"
+								sideOffset={8}
+								title="Pick your course"
+								description="Choose your AP class first, then pick a unit or task."
+							/>
+						</Popover.Root>
+					</div>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="min-w-0 flex-1 space-y-0.5">
+							<p class="text-sm font-medium text-foreground">Reset first-use hints</p>
+							<p class="text-sm text-muted-foreground">
+								Show the small tips for the home page, practice selector, question tools, and Tutor
+								again.
+							</p>
+						</div>
+						<Button type="button" variant="outline" size="sm" onclick={resetProductHints}
+							>Reset</Button
+						>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		</section>
+
+		<section id="account" aria-labelledby="settings-account" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-account" class="mb-4 text-lg leading-6 font-semibold tracking-tight">
+				Account
+			</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<form onsubmit={handleUpdateAccount} class="grid gap-4 py-4 sm:grid-cols-2">
+						<div class="flex flex-col gap-2">
+							<Label for="name">Name</Label>
+							<Input id="name" class="ph-mask-pii" maxlength={64} bind:value={accountForm.name} />
+						</div>
+						<div class="flex flex-col gap-2">
+							<Label for="email">Email</Label>
+							<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
+						</div>
+						<div class="flex flex-wrap gap-2 pt-1 sm:col-span-2">
+							<Button type="submit" size="sm" disabled={accountActions.accountPending}>
+								{accountActions.accountPending ? 'Saving...' : 'Save changes'}
+							</Button>
+							<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
+								Reset
+							</Button>
+						</div>
+					</form>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Sign out</p>
+							<p class="text-sm text-muted-foreground">End your session on this device.</p>
+						</div>
 						<Button
 							type="button"
+							variant="outline"
 							size="sm"
-							class="rounded-full {SUPER_GRADIENT_BUTTON_CLASS}"
-							onclick={claimFreeBeta}
-							disabled={claimingFreeBeta}
+							onclick={handleSignOut}
+							disabled={signOutPending}
 						>
-							<SparklesIcon class="size-3.5" />
-							{claimingFreeBeta ? 'Claiming…' : 'Claim free Super'}
+							{signOutPending ? 'Signing out...' : 'Sign out'}
 						</Button>
-					{:else if data.planAccess.plan !== 'super' && !data.billing?.billingIssue}
-						<Button type="button" variant="outline" size="sm" href={resolve('pricing')}
-							>Upgrade</Button
-						>
-					{/if}
-				</div>
-
-				{#if data.planAccess.plan === 'super'}
-					<div class="space-y-3 border-t border-border/60 px-4 py-4">
-						<div class="grid gap-3 sm:grid-cols-2">
-							<div>
-								<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-									Status
-								</p>
-								<p class="mt-1 text-sm font-medium capitalize">
-									{data.billing?.status?.replaceAll('_', ' ') ?? 'Active'}
-								</p>
-							</div>
-							<div>
-								<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-									{data.billing?.cancelAt || data.billing?.cancelAtPeriodEnd ? 'Cancels' : 'Renews'}
-								</p>
-								<p class="mt-1 text-sm font-medium">
-									{formatDate(data.billing?.cancelAt ?? data.billing?.periodEnd)}
-								</p>
-							</div>
-						</div>
-						<div>
-							<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-								Coach usage
+					</div>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-destructive">Delete account</p>
+							<p class="text-sm text-muted-foreground">
+								Permanently delete your account and all associated data.
 							</p>
-							{#if data.usage.status === 'available'}
-								<p class="mt-1 text-sm">
-									{data.usage.remainingCredits} of {data.usage.limitCredits} Coach credits remaining this
-									month.
-								</p>
-								<p class="mt-1 text-xs text-muted-foreground">
-									Each turn uses credits based on AI usage. Web search adds 0.25 credits.
-								</p>
-								{#if data.usage.warning}
-									<p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
-										You have used {data.usage.warning}% of this month's Coach credits.
-									</p>
-								{/if}
-							{:else}
-								<p class="mt-1 text-sm text-muted-foreground">
-									Usage is unavailable right now. Try again later.
-								</p>
-							{/if}
 						</div>
+						<Button
+							type="button"
+							variant="destructive"
+							size="sm"
+							onclick={() => (deleteAccountOpen = true)}>Delete</Button
+						>
 					</div>
-				{/if}
-
-				<div
-					class="flex flex-wrap items-center justify-between gap-4 border-t border-border/60 px-4 py-4"
-				>
-					<div class="min-w-0 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Tutor memory</p>
-						<p class="text-sm text-muted-foreground">
-							Memory is {data.profile.memoryEnabled ? 'on' : 'paused'}. View all the memories
-							currently stored for your Tutor.
-						</p>
-					</div>
-
-					<Button type="button" variant="outline" size="sm" href={resolve('app/settings/memory')}
-						>View memories</Button
-					>
-				</div>
+				</Card.Content>
 			</Card.Root>
-		</Tabs.Content>
+		</section>
 
-		<Tabs.Content value="advanced" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Reset onboarding</p>
-						<p class="text-sm text-muted-foreground">
-							Show the course selection screen again so you can test the onboarding flow.
-						</p>
+		<section id="about" aria-labelledby="settings-about" class="w-full min-w-0 scroll-mt-24">
+			<h2 id="settings-about" class="mb-4 text-lg leading-6 font-semibold tracking-tight">About</h2>
+			<Card.Root class="gap-0 py-0">
+				<Card.Content class="px-4 sm:px-5">
+					<div class="flex items-center justify-between gap-4 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">App version</p>
+							<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
+						</div>
+						<p class="text-sm font-medium text-foreground tabular-nums">{APP_VERSION}</p>
 					</div>
-					<Button type="button" variant="outline" size="sm" href={resolve('app/onboarding?reset=1')}
-						>Reset</Button
-					>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 flex-1 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Preview hint card</p>
-						<p class="text-sm text-muted-foreground">
-							Open the feature hint popover to check layout and copy.
-						</p>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Privacy Policy</p>
+							<p class="text-sm text-muted-foreground">How we handle your data.</p>
+						</div>
+
+						<Button type="button" variant="outline" size="sm" href={resolve('privacy')}>View</Button
+						>
 					</div>
-					<Popover.Root>
-						<Popover.Trigger>
-							{#snippet child({ props })}
-								<Button type="button" variant="outline" size="sm" {...props}>Show hint card</Button>
-							{/snippet}
-						</Popover.Trigger>
-						<HintCard
-							side="bottom"
-							align="end"
-							sideOffset={8}
-							title="Pick your course"
-							description="Choose your AP class first, then pick a unit or task."
-						/>
-					</Popover.Root>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="min-w-0 flex-1 space-y-0.5">
-						<p class="text-sm font-medium text-foreground">Reset first-use hints</p>
-						<p class="text-sm text-muted-foreground">
-							Show the small tips for the home page, practice selector, question tools, and Tutor
-							again.
-						</p>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Terms of Service</p>
+							<p class="text-sm text-muted-foreground">The rules for using this site.</p>
+						</div>
+
+						<Button type="button" variant="outline" size="sm" href={resolve('terms')}>View</Button>
 					</div>
-					<Button type="button" variant="outline" size="sm" onclick={resetProductHints}>
-						Reset
-					</Button>
-				</div>
+					<div class="flex items-center justify-between gap-4 border-t border-border/60 py-4">
+						<div class="flex min-w-0 flex-col gap-0.5">
+							<p class="text-sm font-medium text-foreground">Changelog</p>
+							<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
+						</div>
+
+						<Button type="button" variant="outline" size="sm" href={resolve('changelog')}
+							>View</Button
+						>
+					</div>
+				</Card.Content>
 			</Card.Root>
-		</Tabs.Content>
-
-		<Tabs.Content value="account" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<form onsubmit={handleUpdateAccount} class="flex flex-col gap-4 px-4 py-4">
-					<div class="flex flex-col gap-2">
-						<Label for="name">Name</Label>
-						<Input id="name" class="ph-mask-pii" maxlength={64} bind:value={accountForm.name} />
-					</div>
-					<div class="flex flex-col gap-2">
-						<Label for="email">Email</Label>
-						<Input id="email" type="email" class="ph-mask-pii" bind:value={accountForm.email} />
-					</div>
-					<div class="flex flex-wrap gap-2 pt-1">
-						<Button type="submit" size="sm" disabled={accountActions.accountPending}>
-							{accountActions.accountPending ? 'Saving...' : 'Save changes'}
-						</Button>
-						<Button type="button" variant="outline" size="sm" onclick={resetAccountForm}>
-							Reset
-						</Button>
-					</div>
-				</form>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Sign out</p>
-						<p class="text-sm text-muted-foreground">End your session on this device.</p>
-					</div>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onclick={handleSignOut}
-						disabled={signOutPending}
-					>
-						{signOutPending ? 'Signing out...' : 'Sign out'}
-					</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-destructive">Delete account</p>
-						<p class="text-sm text-muted-foreground">
-							Permanently delete your account and all associated data.
-						</p>
-					</div>
-					<Button
-						type="button"
-						variant="destructive"
-						size="sm"
-						onclick={() => (deleteAccountOpen = true)}>Delete</Button
-					>
-				</div>
-			</Card.Root>
-		</Tabs.Content>
-
-		<Tabs.Content value="about" class="flex w-full min-w-0 flex-col gap-3">
-			<Card.Root class="gap-0 rounded-2xl border border-border/60 py-0 ring-0">
-				<div class="flex items-center justify-between gap-4 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">App version</p>
-						<p class="text-sm text-muted-foreground">Current Free AP Practice release.</p>
-					</div>
-					<p class="text-sm font-medium text-foreground tabular-nums">{APP_VERSION}</p>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Privacy Policy</p>
-						<p class="text-sm text-muted-foreground">How we handle your data.</p>
-					</div>
-
-					<Button type="button" variant="outline" size="sm" href={resolve('privacy')}>View</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Terms of Service</p>
-						<p class="text-sm text-muted-foreground">The rules for using this site.</p>
-					</div>
-
-					<Button type="button" variant="outline" size="sm" href={resolve('terms')}>View</Button>
-				</div>
-				<div class="flex items-center justify-between gap-4 border-t border-border/60 px-4 py-3.5">
-					<div class="flex min-w-0 flex-col gap-0.5">
-						<p class="text-sm font-medium text-foreground">Changelog</p>
-						<p class="text-sm text-muted-foreground">What changed in recent releases.</p>
-					</div>
-
-					<Button type="button" variant="outline" size="sm" href={resolve('changelog')}>View</Button
-					>
-				</div>
-			</Card.Root>
-		</Tabs.Content>
-	</Tabs.Root>
+		</section>
+	</div>
 </PageShell>
 
 <AlertDialog.Root bind:open={clearPracticeOpen}>

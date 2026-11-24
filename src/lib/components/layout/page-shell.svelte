@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { cn } from '#lib/utils.js';
 
 	let {
 		title,
 		description = undefined,
 		maskTitle = false,
+		class: className,
 		actions,
 		children
 	}: {
@@ -12,12 +14,15 @@
 		description?: string;
 		/** When true, the title is hashed in PostHog session recordings. */
 		maskTitle?: boolean;
+		class?: string;
 		actions?: Snippet;
 		children?: Snippet;
 	} = $props();
 </script>
 
-<div class="mx-auto w-full max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-12 lg:px-10">
+<div
+	class={cn('mx-auto w-full max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-12 lg:px-10', className)}
+>
 	<header class="flex items-start justify-between gap-4">
 		<div class="min-w-0 space-y-2">
 			<h1

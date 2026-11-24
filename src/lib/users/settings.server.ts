@@ -18,6 +18,7 @@ type SettingsUsage =
 			usedCredits: string;
 			limitCredits: string;
 			remainingCredits: string;
+			usedPercent: number;
 			warning: 80 | 95 | null;
 	  }
 	| { status: 'unavailable' }
@@ -36,6 +37,10 @@ async function readSettingsUsage(
 			usedCredits: formatCreditsFromMilli(usage.used),
 			limitCredits: formatCreditsFromMilli(usage.limit),
 			remainingCredits: formatCreditsFromMilli(usage.remaining),
+			usedPercent:
+				usage.limit > 0
+					? Math.max(0, Math.min(100, (100 * (usage.limit - usage.remaining)) / usage.limit))
+					: 0,
 			warning: getPersonalizedUsageWarning(usage)
 		};
 	} catch {

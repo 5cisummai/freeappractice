@@ -381,9 +381,13 @@
 										>{activeReviewItem.unit}</span
 									>{/if}
 							</div>
-							<span class="font-mono text-xs text-muted-foreground"
-								>{shortId(activeReviewItem.questionId)}</span
-							>
+							<div class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+								{#if activeReviewItem.createdAt}
+									<span>Created {formatDateTime(activeReviewItem.createdAt)}</span>
+									<span aria-hidden="true">·</span>
+								{/if}
+								<span class="font-mono">{shortId(activeReviewItem.questionId)}</span>
+							</div>
 						</div>
 
 						{#key activeReviewItem.questionId}

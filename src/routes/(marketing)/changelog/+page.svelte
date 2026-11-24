@@ -5,6 +5,27 @@
 
 	const changelog = [
 		{
+			version: '1.10.10',
+			date: 'November 24, 2026',
+			sections: [
+				{
+					title: 'Improvements',
+					items: [
+						'Settings groups account, appearance, and Super controls into sections with shortcuts to each section',
+						'Open Pip from its dedicated page in the app navigation',
+						'The study plan page groups tasks by day and prompts you to create a new plan when the current week ends',
+						'Question reviewers can see when a question was created in the quality dashboard'
+					]
+				},
+				{
+					title: 'Fixes',
+					items: [
+						'Graded quizzes can start with fewer questions when the selected unit has a small question pool'
+					]
+				}
+			]
+		},
+		{
 			version: '1.10.9',
 			date: 'November 19, 2026',
 			sections: [
@@ -1769,7 +1790,7 @@
 		<PublicPageHero
 			title="Changelog"
 			description="Release notes and updates for Free AP Practice."
-			meta="Last Updated: November 19, 2026"
+			meta="Last Updated: November 24, 2026"
 		/>
 
 		<div class="space-y-12 pt-8">

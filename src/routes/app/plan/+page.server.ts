@@ -1,14 +1,17 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { formatDayInTimeZone } from '#lib/dates/calendar-day.js';
+import { timezoneFromCookies } from '#lib/users/timezone.js';
 import { authorizeFeatureRequest } from '#lib/agent/access.server.js';
 import {
 	completeStudyTask,
 	getCurrentStudyPlan,
+	studyPlanForDay,
 	StudyPlanConflictError,
 	StudyPlansLockedError
 } from '#lib/agent/plans/store.server.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ cookies, locals }) => {
 	const userId = locals.userId!;
 	const access = await authorizeFeatureRequest({ locals }, userId, 'studyPlans');
 
@@ -17,15 +20,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 			canView: false,
 			accessCode: access.code,
 			accessMessage: access.message,
-			plan: null
+			plan: null,
+			planExpired: false
 		};
 	}
 
+	const savedPlan = await getCurrentStudyPlan(userId);
+	const plan = studyPlanForDay(
+		savedPlan,
+		formatDayInTimeZone(new Date(), timezoneFromCookies(cookies))
+	);
 	return {
 		canView: true,
 		accessCode: null,
 		accessMessage: null,
-		plan: await getCurrentStudyPlan(userId)
+		plan,
+		planExpired: Boolean(savedPlan && !plan)
 	};
 };
 

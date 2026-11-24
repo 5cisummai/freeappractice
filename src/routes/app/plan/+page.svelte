@@ -80,7 +80,7 @@
 	{/snippet}
 
 	{#if !data.canView}
-		<Card.Root class="mx-auto w-full max-w-2xl">
+		<Card.Root class="w-full max-w-2xl">
 			<Card.Header>
 				<Card.Title>
 					{data.accessCode === 'age_required'
@@ -100,30 +100,40 @@
 			{/if}
 		</Card.Root>
 	{:else if !data.plan}
-		<Card.Root class="mx-auto w-full max-w-2xl border-dashed shadow-none">
+		<Card.Root class="w-full max-w-2xl shadow-none">
 			<Card.Header>
-				<Card.Title>Your weekly plan starts with Pip</Card.Title>
+				<Card.Title>
+					{data.planExpired ? 'Your study plan ended' : 'Your weekly plan starts with Pip'}
+				</Card.Title>
 				<Card.Description>
-					Ask Pip to build a study plan around your classes, goals, and available study time.
+					{data.planExpired
+						? 'Start a new week of practice with Pip.'
+						: 'Ask Pip to build a study plan around your classes, goals, and available study time.'}
 				</Card.Description>
 			</Card.Header>
 			<Card.Footer>
-				<Button href="/app/coach?q=Help%20me%20create%20a%20study%20plan">
-					Create a plan with Pip
+				<Button
+					href={data.planExpired
+						? '/app/coach?q=Build%20a%20new%20weekly%20study%20plan%20starting%20today.%20Merge%20it%20with%20my%20saved%20plan%20to%20preserve%20completed%20tasks.'
+						: '/app/coach?q=Help%20me%20create%20a%20study%20plan'}
+				>
+					{data.planExpired ? 'Create a new plan' : 'Create a plan with Pip'}
 				</Button>
 			</Card.Footer>
 		</Card.Root>
 	{:else}
 		{#if form?.error}
-			<Card.Root class="border-destructive/20 bg-destructive/5 shadow-none">
+			<Card.Root class="mb-5 bg-destructive/5 py-0 shadow-none">
 				<Card.Content class="p-4 text-sm text-destructive" role="alert">
 					{form.error}
 				</Card.Content>
 			</Card.Root>
 		{/if}
 
-		<Card.Root class="shadow-none">
-			<Card.Content class="flex flex-wrap items-center justify-between gap-4 p-5">
+		<Card.Root class="mb-5 py-0 shadow-none">
+			<Card.Content
+				class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5"
+			>
 				<div class="flex items-center gap-3">
 					<div
 						class="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary"
@@ -131,7 +141,7 @@
 						<CalendarIcon class="size-5" />
 					</div>
 					<div>
-						<p class="font-medium">This week</p>
+						<p class="font-medium">Weekly progress</p>
 						<p class="text-sm text-muted-foreground">
 							{completedCount} of {taskCount} tasks complete
 						</p>
@@ -144,35 +154,36 @@
 		</Card.Root>
 
 		{#if taskDays.length}
-			<Card.Root class="overflow-hidden shadow-none">
+			<Card.Root class="overflow-hidden py-0 shadow-none">
 				<Card.Content class="p-0">
-					{#each taskDays as [day, tasks], dayIndex (day)}
+					{#each taskDays as [day, tasks] (day)}
 						{@const dateParts = formatDateColumn(day)}
-						{#if dayIndex > 0}
-							<div class="border-t border-border" role="separator"></div>
-						{/if}
-						<section aria-labelledby={`plan-day-${day}`} class="flex items-stretch">
-							<div
-								class="flex w-[4.5rem] shrink-0 flex-col items-center justify-center self-center px-3 py-6 text-center"
+						<section
+							aria-labelledby={`plan-day-${day}`}
+							class="border-t border-border first:border-t-0 sm:grid sm:grid-cols-[5rem_minmax(0,1fr)]"
+						>
+							<h2
+								id={`plan-day-${day}`}
+								class="flex items-baseline gap-1.5 border-b border-border/60 bg-muted/30 px-4 py-2 text-xs font-medium text-muted-foreground sm:flex-col sm:items-center sm:gap-0.5 sm:border-e sm:border-b-0 sm:px-2 sm:py-4"
 							>
-								<span id={`plan-day-${day}`} class="text-xs text-muted-foreground">
-									{dateParts.weekday}
+								<span>{dateParts.weekday}</span>
+								<span class="tabular-nums sm:text-xl sm:leading-tight sm:text-foreground">
+									{dateParts.day}
 								</span>
-								<span class="text-2xl leading-tight font-bold tabular-nums">{dateParts.day}</span>
-								<span class="text-xs text-muted-foreground">{dateParts.month}</span>
-							</div>
+								<span>{dateParts.month}</span>
+							</h2>
 							<div class="min-w-0 flex-1">
 								{#each tasks as task, taskIndex (task.id)}
 									{@const active = isActiveTask(task)}
 									<div
 										class={[
-											'flex items-center gap-3 py-4 pr-4 pl-2 sm:gap-4 sm:pr-5',
+											'grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 px-4 py-3.5 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:px-5 sm:py-4',
 											taskIndex > 0 ? 'border-t border-border/60' : ''
 										]}
 									>
 										<div
 											class={[
-												'flex size-5 shrink-0 items-center justify-center rounded-full',
+												'mt-0.5 flex size-5 items-center justify-center rounded-full sm:mt-0',
 												task.status === 'done'
 													? 'bg-foreground text-background'
 													: 'border-2 border-muted-foreground/35 bg-transparent'
@@ -184,7 +195,7 @@
 											{/if}
 										</div>
 
-										<div class="min-w-0 flex-1 space-y-1">
+										<div class="min-w-0 space-y-1">
 											<p
 												class={[
 													'leading-snug font-semibold',
@@ -209,7 +220,7 @@
 											</p>
 										</div>
 
-										<div class="shrink-0">
+										<div class="col-start-2 sm:col-start-3">
 											{#if task.status === 'done'}
 												<Button variant="secondary" size="sm" class="px-3" disabled>
 													Start task
@@ -262,10 +273,12 @@
 				</Card.Content>
 			</Card.Root>
 		{:else}
-			<Card.Root class="border-dashed shadow-none">
-				<Card.Content class="p-5 text-sm text-muted-foreground">
+			<Card.Root class="py-0 shadow-none">
+				<Card.Content
+					class="flex flex-wrap items-center gap-x-3 gap-y-1 p-4 text-sm text-muted-foreground sm:px-5"
+				>
 					This plan has no tasks yet. Ask Pip to update your weekly plan.
-					<Button href="/app/coach" variant="link" size="sm">Open Pip</Button>
+					<Button href="/app/coach" variant="link" size="sm" class="h-auto p-0">Open Pip</Button>
 				</Card.Content>
 			</Card.Root>
 		{/if}

@@ -288,16 +288,12 @@
 				>
 					My plan
 				</h2>
-				<Card.Root class="rounded-2xl border border-dashed border-border/80 bg-muted/20 ring-0">
+				<Card.Root class="rounded-2xl border border-border/60 py-0 ring-0">
 					<Card.Content
 						class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
 					>
-						<div class="flex items-start gap-3">
-							<div
-								class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-							>
-								<CalendarIcon class="size-4" aria-hidden="true" />
-							</div>
+						<div class="flex items-center gap-3">
+							<CalendarIcon class="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
 							<p class="text-sm text-muted-foreground">Ask Pip to build your weekly plan</p>
 						</div>
 						<Button

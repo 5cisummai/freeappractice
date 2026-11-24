@@ -2,10 +2,9 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { APP_LAYOUT_DEPENDENCY } from '#lib/client/invalidate-data.js';
 import { isAdminUser } from '#lib/auth/admin.server.js';
-import { activeOrgUsesUserSuper, loadAppOrganizations } from '#lib/auth/organizations.server.js';
-import { isSuperCoachEnabled, isSuperFreeBetaEnabled } from '#lib/flags.js';
-import { getAgeConfirmedAtForRequest, getPlanAccessForRequest } from '#lib/agent/access.server.js';
-import { hasPaidCapability } from '#lib/billing/types.js';
+import { loadAppOrganizations } from '#lib/auth/organizations.server.js';
+import { isSuperFreeBetaEnabled } from '#lib/flags.js';
+import { getPlanAccessForRequest } from '#lib/agent/access.server.js';
 import { hasClaimedSuperFreeBeta } from '#lib/agent/personalization/profile.server.js';
 import {
 	ONBOARDING_COOKIE_NAME,
@@ -21,18 +20,21 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 		throw redirect(302, `/login?redirect=${encodeURIComponent(url.pathname + url.search)}`);
 	}
 
+	const isOnboarding = url.pathname.endsWith('/onboarding');
+	const isInvite = url.pathname.startsWith('/app/invite/');
+
 	if (url.searchParams.get('signup') === 'google') {
 		// Idempotent: user.create.after already set this; keep for older sessions / race safety.
 		cookies.set(ONBOARDING_COOKIE_NAME, 'pending', ONBOARDING_PENDING_COOKIE_OPTIONS);
-		if (!url.pathname.startsWith('/app/invite/')) {
-			throw redirect(303, '/app/onboarding');
+		if (!isInvite && !isOnboarding) {
+			throw redirect(303, '/app/onboarding?signup=google');
 		}
 	}
 
 	const onboardingState = readOnboardingState(cookies.get(ONBOARDING_COOKIE_NAME));
-	const isInvite = url.pathname.startsWith('/app/invite/');
-	if (onboardingState.status === 'pending' && !url.pathname.endsWith('/onboarding') && !isInvite) {
-		throw redirect(303, '/app/onboarding');
+	if (onboardingState.status === 'pending' && !isOnboarding && !isInvite) {
+		const authQuery = url.searchParams.get('login') === 'google' ? '?login=google' : '';
+		throw redirect(303, `/app/onboarding${authQuery}`);
 	}
 
 	const userId = locals.userId!;
@@ -45,21 +47,6 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 	if (organizations.activeOrganization) {
 		locals.activeOrganizationType = organizations.activeOrganization.orgType;
 	}
-	const coachSidebarEnabled = assistantFeaturesEnabled
-		? await (async () => {
-				const [planAccess, ageConfirmedAt, coachEnabled] = await Promise.all([
-					getPlanAccessForRequest(locals, userId),
-					getAgeConfirmedAtForRequest(locals, userId),
-					isSuperCoachEnabled()
-				]);
-				return (
-					coachEnabled &&
-					(await activeOrgUsesUserSuper(locals)) &&
-					hasPaidCapability(planAccess, 'coach') &&
-					Boolean(ageConfirmedAt)
-				);
-			})()
-		: false;
 
 	const freeBetaEnabled = await isSuperFreeBetaEnabled();
 	let showFreeBetaClaimDialog = false;
@@ -77,7 +64,6 @@ export const load: LayoutServerLoad = async ({ cookies, depends, locals, request
 		isAdmin: isAdminUser(locals.user),
 		freeBetaEnabled,
 		assistantFeaturesEnabled,
-		coachSidebarEnabled,
 		showFreeBetaClaimDialog,
 		organizations: organizations.organizations,
 		activeOrganization: organizations.activeOrganization,

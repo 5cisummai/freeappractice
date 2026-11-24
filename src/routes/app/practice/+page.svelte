@@ -34,8 +34,11 @@
 			: presetUnit,
 		requestVersion: data.sharedQuiz || presetQuestion ? 1 : 0,
 		presetQuestionId: data.sharedQuiz ? '' : presetQuestion,
-		mode: (!data.sharedQuiz && data.frqEnabled && presetMode === 'frq' ? 'frq' : 'mcq') as
-			'mcq' | 'frq'
+		mode: (!data.sharedQuiz &&
+		data.frqEnabled &&
+		(presetMode || (presetQuestion ? 'mcq' : data.defaultPracticeMode)) === 'frq'
+			? 'frq'
+			: 'mcq') as 'mcq' | 'frq'
 	});
 
 	type ApiErrorPayload = { error?: string };
@@ -131,7 +134,12 @@
 						tutorMode: data.assistantFeaturesEnabled ? 'free' : 'hidden',
 						showFirstUseHints: true
 					}}
-					quiz={{ persistHistory: true, sharedQuiz: data.sharedQuiz }}
+					quiz={{
+						count: data.defaultQuizCount,
+						showTimer: data.showQuizTimer,
+						persistHistory: true,
+						sharedQuiz: data.sharedQuiz
+					}}
 					onEvent={handlePracticeEvent}
 				/>
 			{/key}
