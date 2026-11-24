@@ -5,6 +5,10 @@ import {
 	type QuestionSource
 } from '#lib/client/activation-analytics.js';
 import {
+	FOLLOW_UP_EMPTY_CODE,
+	INSUFFICIENT_QUESTIONS_CODE,
+	isFollowUpEmptyResponse,
+	isInsufficientQuestionsResponse,
 	isPoolWarmingResponse,
 	parseQuestionPayloadFromResponse,
 	type QuestionApiResponse
@@ -19,6 +23,23 @@ export class PoolWarmingError extends QuestionRequestError {
 		super(message, 503);
 		this.name = 'PoolWarmingError';
 		this.retryAfterSeconds = retryAfterSeconds;
+	}
+}
+
+export class QuizStartError extends QuestionRequestError {
+	readonly code: string;
+	readonly availableCount: number | null;
+
+	constructor(
+		message: string,
+		status: number | null,
+		code: string,
+		availableCount: number | null = null
+	) {
+		super(message, status);
+		this.name = 'QuizStartError';
+		this.code = code;
+		this.availableCount = availableCount;
 	}
 }
 
@@ -149,8 +170,34 @@ export async function requestMcqQuiz(
 		const payload = await readJsonOrNull<
 			QuestionApiResponse & {
 				metrics?: { focusMatchedCount?: number };
+				availableCount?: number;
 			}
 		>(response);
+		if (isFollowUpEmptyResponse(payload)) {
+			const availableCount =
+				typeof payload.availableCount === 'number' ? Math.max(0, payload.availableCount) : 0;
+			throw new QuizStartError(
+				payload.error || 'No follow-up questions are available from the missed units right now.',
+				response.status,
+				FOLLOW_UP_EMPTY_CODE,
+				availableCount
+			);
+		}
+		if (
+			isInsufficientQuestionsResponse(payload) &&
+			payload.availableCount >= 1 &&
+			payload.availableCount < count
+		) {
+			return requestMcqQuiz(course, unit, payload.availableCount, unitRange, options);
+		}
+		if (isInsufficientQuestionsResponse(payload)) {
+			throw new QuizStartError(
+				payload.error || 'Not enough questions are available for this quiz.',
+				response.status,
+				INSUFFICIENT_QUESTIONS_CODE,
+				payload.availableCount
+			);
+		}
 		if (isPoolWarmingResponse(payload)) {
 			throw new PoolWarmingError(
 				payload.error || 'Question pool is warming up. Please retry shortly.',

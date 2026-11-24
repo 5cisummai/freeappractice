@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	PoolWarmingError,
+	QuizStartError,
 	requestFrqQuestion,
 	requestMcqQuestion,
 	requestMcqQuestions,
@@ -123,6 +124,67 @@ describe('question request transport', () => {
 			'/api/question/quiz',
 			expect.objectContaining({ body: expect.stringContaining('"count":2') })
 		);
+	});
+
+	it('retries a quiz at the available count when the pool is short', async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						code: 'INSUFFICIENT_QUESTIONS',
+						error:
+							'Not enough active questions are available for a 10-question quiz. Maximum available: 2.',
+						availableCount: 2
+					}),
+					{ status: 400 }
+				)
+			)
+			.mockResolvedValueOnce(
+				new Response(
+					JSON.stringify({
+						questions: [
+							{ questionId: 'q-1', answer: mcqPayload },
+							{ questionId: 'q-2', answer: { ...mcqPayload, questionId: 'q-2' } }
+						]
+					}),
+					{ status: 200 }
+				)
+			);
+		vi.stubGlobal('fetch', fetchMock);
+
+		const result = await requestMcqQuiz('AP Biology', 'Unit 1', 10);
+		expect(result.questions).toHaveLength(2);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+			expect.objectContaining({ body: expect.stringContaining('"count":2') })
+		);
+	});
+
+	it('throws a typed follow-up empty error', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(
+				async () =>
+					new Response(
+						JSON.stringify({
+							code: 'FOLLOW_UP_EMPTY',
+							error: 'No follow-up questions are available from the missed units right now.',
+							availableCount: 0
+						}),
+						{ status: 400 }
+					)
+			)
+		);
+
+		const error = await requestMcqQuiz('AP Biology', 'Unit 1', 3, undefined, {
+			focusQuestionIds: ['missed']
+		}).catch((caught) => caught);
+		expect(error).toBeInstanceOf(QuizStartError);
+		expect(error).toMatchObject({
+			code: 'FOLLOW_UP_EMPTY',
+			availableCount: 0
+		});
 	});
 
 	it('parses a batch of MCQs from one response', async () => {

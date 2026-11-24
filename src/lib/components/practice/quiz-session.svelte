@@ -16,6 +16,12 @@
 	import { resolveEffectiveUnit } from '#lib/catalog/courses.js';
 	import { resolveQuestionMainTopic } from '#lib/question-bank/main-topic.js';
 	import { requestMcqQuestion, requestMcqQuiz } from '#lib/question-bank/request.client.js';
+	import {
+		classifyQuizStartFailure,
+		quizStartFailedProperties,
+		quizStartedProperties,
+		type QuizStartFailure
+	} from '#lib/question-bank/mcq/quiz-start-failure.js';
 	import { capturePostHogEvent } from '#lib/client/posthog-analytics.js';
 	import RichText from '#lib/components/content/rich-text.svelte';
 	import * as Collapsible from '#lib/components/ui/collapsible/index.js';
@@ -101,6 +107,7 @@
 		matched: number;
 	} | null>(null);
 	let recapOpenByIndex = $state<Record<number, boolean>>({});
+	let lastStartFailure = $state<QuizStartFailure | null>(null);
 	let lastRequestVersion = 0;
 	let lastSelectionKey = '';
 
@@ -116,32 +123,37 @@
 		},
 		loadQuestions: async (requestedCount) => {
 			const session = followUp;
-			const result = await requestMcqQuiz(
-				selectedCourse,
-				selectedUnit,
-				requestedCount,
-				unitRange,
-				session
-					? {
-							focusQuestionIds: session.missedIds,
-							excludeQuestionIds: session.allIds
-						}
-					: undefined
-			);
-			if (session && result.focusMatchedCount !== undefined) {
-				followUp = { ...session, matched: result.focusMatchedCount };
-				capturePostHogEvent('fix_mistakes_started', {
-					course: selectedCourse,
-					unit: selectedUnit || 'All Units',
-					missedCount: session.missedIds.length,
+			try {
+				const result = await requestMcqQuiz(
+					selectedCourse,
+					selectedUnit,
 					requestedCount,
-					focusMatchedCount: result.focusMatchedCount
-				});
+					unitRange,
+					session
+						? {
+								focusQuestionIds: session.missedIds,
+								excludeQuestionIds: session.allIds
+							}
+						: undefined
+				);
+				if (session && result.focusMatchedCount !== undefined) {
+					followUp = { ...session, matched: result.focusMatchedCount };
+					capturePostHogEvent('fix_mistakes_started', {
+						course: selectedCourse,
+						unit: selectedUnit || 'All Units',
+						missedCount: session.missedIds.length,
+						requestedCount,
+						focusMatchedCount: result.focusMatchedCount
+					});
+				}
+				if (result.questions.some((question) => !question.correctAnswer)) {
+					throw new Error('Quiz service returned a question without an answer key.');
+				}
+				return result.questions;
+			} catch (error) {
+				lastStartFailure = classifyQuizStartFailure(error);
+				throw error;
 			}
-			if (result.questions.some((question) => !question.correctAnswer)) {
-				throw new Error('Quiz service returned a question without an answer key.');
-			}
-			return result.questions;
 		},
 		onComplete: (snapshot) => {
 			if (examSection) {
@@ -315,6 +327,7 @@
 		stimulusScrollTopById = {};
 		lastSnapshot = null;
 		recapOpenByIndex = {};
+		lastStartFailure = null;
 		if (clearFollowUp) followUp = null;
 	}
 
@@ -340,12 +353,43 @@
 		return `${selectedCourse}::${selectedUnit}::${unitRange?.join(',') ?? ''}`;
 	}
 
+	function captureQuizStartFailed(
+		requestedCount: number,
+		focusMode: boolean,
+		failure: QuizStartFailure
+	): void {
+		capturePostHogEvent(
+			'quiz_start_failed',
+			quizStartFailedProperties({
+				course: selectedCourse,
+				unit: selectedUnit || 'All Units',
+				requestedCount,
+				focusMode,
+				failure
+			})
+		);
+	}
+
 	async function startQuiz(options?: { keepFollowUp?: boolean }): Promise<void> {
-		if (!enabled || !selectedCourse) return;
+		if (!enabled) return;
 		const session = options?.keepFollowUp ? followUp : null;
+		const quizCount = session ? Math.min(5, Math.max(3, session.missedIds.length)) : count;
+		const focusMode = Boolean(session);
+		if (!selectedCourse) {
+			const failure: QuizStartFailure = {
+				reason: 'missing_course',
+				errorCode: 'MISSING_COURSE',
+				message: 'Choose a course before starting a quiz.',
+				availableCount: null,
+				retryable: false,
+				status: null
+			};
+			lastStartFailure = failure;
+			captureQuizStartFailed(quizCount, focusMode, failure);
+			return;
+		}
 		resetLocalSessionState(!options?.keepFollowUp);
 		if (session) followUp = session;
-		const quizCount = session ? Math.min(5, Math.max(3, session.missedIds.length)) : count;
 		setGenerating(true);
 		try {
 			await exam.start({
@@ -360,9 +404,32 @@
 					kind: 'quiz'
 				}
 			});
+			if (exam.status === 'error') {
+				const failure = lastStartFailure ?? classifyQuizStartFailure(new Error(exam.errorMessage));
+				lastStartFailure = failure;
+				captureQuizStartFailed(quizCount, focusMode, failure);
+				return;
+			}
+			if (exam.status === 'active' || exam.status === 'review') {
+				capturePostHogEvent(
+					'quiz_started',
+					quizStartedProperties({
+						course: selectedCourse,
+						unit: selectedUnit || 'All Units',
+						requestedCount: quizCount,
+						selectedCount: exam.requestedCount,
+						focusMode
+					})
+				);
+			}
 		} finally {
 			setGenerating(false);
 		}
+	}
+
+	function startUnitQuizFromError(): void {
+		followUp = null;
+		void startQuiz();
 	}
 
 	function collectMissedQuestionIds(): string[] {
@@ -704,13 +771,13 @@
 	</Popover.Root>
 {/snippet}
 
-{#if exam.status === 'idle'}
+{#if exam.status === 'idle' && !lastStartFailure}
 	<EmptyState
 		title="No quiz yet"
 		description="Choose a course and unit, then start a quiz."
 		imageUrl="/illustrations/books.png"
 	/>
-{:else if exam.status === 'loading' || exam.status === 'error'}
+{:else if exam.status === 'loading' || exam.status === 'error' || lastStartFailure}
 	<Card.Root class="border-border/70 bg-transparent shadow-none ring-0">
 		<Card.Content
 			class="flex min-h-40 flex-col items-center justify-center gap-3 px-6 py-12 text-center"
@@ -722,12 +789,16 @@
 			{:else}
 				<p class="text-lg font-medium text-muted-foreground">We couldn’t start this quiz</p>
 				<p class="max-w-sm text-sm text-muted-foreground/80">
-					{exam.errorMessage || 'Please try again in a moment.'}
+					{exam.errorMessage || lastStartFailure?.message || 'Please try again in a moment.'}
 				</p>
 				<div class="flex flex-wrap justify-center gap-2">
-					<Button onclick={() => void startQuiz({ keepFollowUp: Boolean(followUp) })}
-						>Try again</Button
-					>
+					{#if lastStartFailure?.reason === 'follow_up_empty'}
+						<Button onclick={startUnitQuizFromError}>Practice this unit</Button>
+					{:else if lastStartFailure?.retryable !== false}
+						<Button onclick={() => void startQuiz({ keepFollowUp: Boolean(followUp) })}
+							>Try again</Button
+						>
+					{/if}
 					<Button variant="outline" onclick={requestExit}>Leave quiz</Button>
 				</div>
 			{/if}
