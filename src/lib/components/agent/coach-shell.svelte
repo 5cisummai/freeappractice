@@ -52,7 +52,6 @@
 	import type { ToolUIPartApproval } from '#lib/components/ai-elements/confirmation/confirmation-context.svelte.js';
 	import { getApprovalProposal } from '#lib/components/agent/approval.js';
 	import CoachQuestionCard from '#lib/components/agent/coach-question-card.svelte';
-	import CoachMessageFeedbackDialog from '#lib/components/agent/coach-message-feedback-dialog.svelte';
 	import type { CoachQuestionToolOutput } from '#lib/agent/tools/question.js';
 	import { toast } from 'svelte-sonner';
 
@@ -78,9 +77,6 @@
 	let clientReady = $state(false);
 	let conversationLoadRequest = 0;
 	let pendingCoachActions: CoachComposerActionId[] = [];
-	let messageFeedbackById = $state<Record<string, CoachMessageFeedback>>({});
-	let notHelpfulFeedbackOpen = $state(false);
-	let notHelpfulFeedbackMessageId = $state<string | null>(null);
 	const asIcon = (icon: unknown) => icon as Component;
 
 	const coachActionIcons: Record<CoachComposerActionId, Component> = {
@@ -100,8 +96,6 @@
 		createdAt: string;
 		updatedAt: string;
 	};
-
-	type CoachMessageFeedback = 'helpful' | 'not_helpful';
 
 	const coach = new Chat<AgentUIMessage>({
 		messages: [],
@@ -216,13 +210,6 @@
 
 	function isToolInProgress(state: string | undefined): boolean {
 		return state === 'input-streaming' || state === 'input-available';
-	}
-
-	function messageText(message: AgentUIMessage): string {
-		return message.parts
-			.filter((part) => part.type === 'text')
-			.map((part) => part.text)
-			.join('\n');
 	}
 
 	function formatDate(value: unknown): string | null {
@@ -367,44 +354,6 @@
 				? `You have ${remaining} Coach credits left this month.`
 				: `You have used ${warning}% of this month's Coach credits.`
 		);
-	}
-
-	async function copyText(text: string, successMessage: string): Promise<void> {
-		if (!text) return;
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success(successMessage);
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Could not copy that text.');
-		}
-	}
-
-	async function copyMessage(message: AgentUIMessage): Promise<void> {
-		const text = messageText(message);
-		await copyText(text, 'Response copied.');
-	}
-
-	function toggleMessageFeedback(messageId: string, feedback: CoachMessageFeedback): void {
-		if (messageFeedbackById[messageId] === feedback) {
-			const rest = { ...messageFeedbackById };
-			delete rest[messageId];
-			messageFeedbackById = rest;
-			return;
-		}
-		messageFeedbackById = { ...messageFeedbackById, [messageId]: feedback };
-	}
-
-	function openNotHelpfulFeedback(messageId: string): void {
-		if (messageFeedbackById[messageId] === 'not_helpful') {
-			toggleMessageFeedback(messageId, 'not_helpful');
-			return;
-		}
-		notHelpfulFeedbackMessageId = messageId;
-		notHelpfulFeedbackOpen = true;
-	}
-
-	function handleNotHelpfulFeedbackSubmitted(messageId: string): void {
-		messageFeedbackById = { ...messageFeedbackById, [messageId]: 'not_helpful' };
 	}
 
 	async function regenerateMessage(messageId: string): Promise<void> {
@@ -667,18 +616,14 @@
 				>
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
-							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 [mask-image:linear-gradient(to_bottom,transparent,black_5rem,black_calc(100%_-_5rem),transparent)] sm:px-8 sm:pt-10"
+							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 gap-1.5 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 [mask-image:linear-gradient(to_bottom,transparent,black_5rem,black_calc(100%_-_5rem),transparent)] sm:px-8 sm:pt-10"
 							aria-live="polite"
 						>
 							<CoachMessages
 								messages={coach.messages}
 								{streaming}
 								{composerHasText}
-								{messageFeedbackById}
 								{regenerateMessage}
-								{copyMessage}
-								{toggleMessageFeedback}
-								{openNotHelpfulFeedback}
 								{submitPracticeQuestionResult}
 								conversationId={conversationId || undefined}
 								{persistPracticeQuestionAssignment}
@@ -793,12 +738,4 @@
 			{/if}
 		</div>
 	</div>
-
-	<CoachMessageFeedbackDialog
-		bind:open={notHelpfulFeedbackOpen}
-		messageId={notHelpfulFeedbackMessageId}
-		{conversationId}
-		messages={coach.messages}
-		onSubmitted={handleNotHelpfulFeedbackSubmitted}
-	/>
 </div>

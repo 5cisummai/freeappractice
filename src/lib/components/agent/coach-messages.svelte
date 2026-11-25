@@ -14,13 +14,6 @@
 	import StepActivityIcon from '@lucide/svelte/icons/activity';
 	import StepSigmaIcon from '@lucide/svelte/icons/sigma';
 	import StepFallbackIcon from '@lucide/svelte/icons/wrench';
-	import CopyIcon from '@tabler/icons-svelte/icons/copy';
-	import ThumbDownFilledIcon from '@tabler/icons-svelte/icons/thumb-down-filled';
-	import ThumbDownIcon from '@tabler/icons-svelte/icons/thumb-down';
-	import ThumbUpFilledIcon from '@tabler/icons-svelte/icons/thumb-up-filled';
-	import ThumbUpIcon from '@tabler/icons-svelte/icons/thumb-up';
-
-	import RefreshCwIcon from '@tabler/icons-svelte/icons/refresh';
 	import PaperclipIcon from '@tabler/icons-svelte/icons/paperclip';
 
 	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
@@ -32,7 +25,6 @@
 
 	import * as Message from '#lib/components/ui/message/index.js';
 	import * as Bubble from '#lib/components/ui/bubble/index.js';
-	import { Button } from '#lib/components/ui/button/index.js';
 	import CoachMessageBubbleMenu from '#lib/components/agent/coach-message-bubble-menu.svelte';
 
 	import RichText from '#lib/components/content/rich-text.svelte';
@@ -64,11 +56,7 @@
 		messages,
 		streaming,
 		composerHasText,
-		messageFeedbackById,
 		regenerateMessage,
-		copyMessage,
-		toggleMessageFeedback,
-		openNotHelpfulFeedback,
 		submitPracticeQuestionResult,
 		conversationId,
 		persistPracticeQuestionAssignment,
@@ -77,11 +65,7 @@
 		messages: AgentUIMessage[];
 		streaming: boolean;
 		composerHasText: boolean;
-		messageFeedbackById: Record<string, 'helpful' | 'not_helpful'>;
 		regenerateMessage: (id: string) => Promise<void>;
-		copyMessage: (message: AgentUIMessage) => Promise<void>;
-		toggleMessageFeedback: (id: string, feedback: 'helpful' | 'not_helpful') => void;
-		openNotHelpfulFeedback: (id: string) => void;
 		submitPracticeQuestionResult: (
 			id: string,
 			output: CoachPracticeQuestionToolOutput
@@ -93,9 +77,6 @@
 		) => Promise<boolean>;
 		replyToId?: string;
 	} = $props();
-	function messageFeedback(id: string) {
-		return messageFeedbackById[id];
-	}
 	const toolActivityLabels: Record<string, { running: string; complete: string }> = {
 		'tool-search_web': {
 			running: 'Searching the web…',
@@ -384,16 +365,19 @@
 
 	let reactionsById = $state<Record<string, string[]>>({});
 	let replyQuoteById = $state<Record<string, ReplyQuote>>({});
-	let firstSeenAt = $state<Record<string, number>>({});
+	// Plain map — written during render for first-seen timestamps; must not be $state.
+	const firstSeenAt = new Map<string, number>();
 	let pendingQuote = $state<ReplyQuote | null>(null);
 	let lastUserMessageId = $state<string | undefined>(undefined);
 	let messageHighlight: Animation | undefined;
 
-
 	$effect(() => {
 		const currentUserId = messages.findLast((message) => message.role === 'user')?.id;
 		if (currentUserId && currentUserId !== lastUserMessageId && pendingQuote) {
-			replyQuoteById = { ...replyQuoteById, [currentUserId]: pendingQuote };
+			replyQuoteById = {
+				...replyQuoteById,
+				[currentUserId]: { id: pendingQuote.id, role: pendingQuote.role, content: pendingQuote.content }
+			};
 			pendingQuote = null;
 			replyToId = undefined;
 		}
@@ -405,12 +389,17 @@
 	});
 
 	function messageTimestamp(message: AgentUIMessage): number {
-		const createdAt = (message as { createdAt?: Date }).createdAt;
+		const createdAt = (message as { createdAt?: Date | string | number }).createdAt;
 		if (createdAt instanceof Date) return createdAt.getTime();
-		const cached = firstSeenAt[message.id];
+		if (typeof createdAt === 'number' && Number.isFinite(createdAt)) return createdAt;
+		if (typeof createdAt === 'string') {
+			const parsed = Date.parse(createdAt);
+			if (!Number.isNaN(parsed)) return parsed;
+		}
+		const cached = firstSeenAt.get(message.id);
 		if (cached != null) return cached;
 		const now = Date.now();
-		firstSeenAt[message.id] = now;
+		firstSeenAt.set(message.id, now);
 		return now;
 	}
 
@@ -837,79 +826,6 @@
 						{@render reactionBadge(false, reactions)}
 					</div>
 				</CoachMessageBubbleMenu>
-				{#if messageText(message)}
-					<Message.Footer
-						class={cn(
-							'mt-0 gap-0 transition-opacity',
-							messageIndex === messages.length - 1
-								? 'opacity-100'
-								: 'opacity-0 group-focus-within/message:opacity-100 group-hover/message:opacity-100'
-						)}
-					>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							class="size-7"
-							disabled={streaming}
-							aria-label="Regenerate response"
-							title="Regenerate response"
-							onclick={() => void regenerateMessage(message.id)}
-						>
-							<RefreshCwIcon />
-							<span class="sr-only">Regenerate response</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							class="size-7"
-							aria-label="Copy response"
-							title="Copy response"
-							onclick={() => void copyMessage(message)}
-						>
-							<CopyIcon />
-							<span class="sr-only">Copy response</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							class={cn('size-7', messageFeedback(message.id) === 'helpful' && 'bg-muted text-foreground')}
-							aria-label="Helpful response"
-							title="Helpful response"
-							aria-pressed={messageFeedback(message.id) === 'helpful'}
-							onclick={() => toggleMessageFeedback(message.id, 'helpful')}
-						>
-							{#if messageFeedback(message.id) === 'helpful'}
-								<ThumbUpFilledIcon />
-							{:else}
-								<ThumbUpIcon />
-							{/if}
-							<span class="sr-only">Helpful response</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							type="button"
-							class={cn(
-								'size-7',
-								messageFeedback(message.id) === 'not_helpful' && 'bg-muted text-foreground'
-							)}
-							aria-label="Not helpful response"
-							title="Not helpful response"
-							aria-pressed={messageFeedback(message.id) === 'not_helpful'}
-							onclick={() => openNotHelpfulFeedback(message.id)}
-						>
-							{#if messageFeedback(message.id) === 'not_helpful'}
-								<ThumbDownFilledIcon />
-							{:else}
-								<ThumbDownIcon />
-							{/if}
-							<span class="sr-only">Not helpful response</span>
-						</Button>
-					</Message.Footer>
-				{/if}
 			</Message.Content>
 				{/if}
 			</Message.Root>
