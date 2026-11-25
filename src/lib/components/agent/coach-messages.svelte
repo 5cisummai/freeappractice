@@ -26,7 +26,14 @@
 	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
 	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
 
-	import * as Message from '#lib/components/ai-elements/message/index.js';
+	import { tick } from 'svelte';
+	import { backOut } from 'svelte/easing';
+	import { fly, scale } from 'svelte/transition';
+
+	import * as Message from '#lib/components/ui/message/index.js';
+	import * as Bubble from '#lib/components/ui/bubble/index.js';
+	import { Button } from '#lib/components/ui/button/index.js';
+	import CoachMessageBubbleMenu from '#lib/components/agent/coach-message-bubble-menu.svelte';
 
 	import RichText from '#lib/components/content/rich-text.svelte';
 	import { getCanvasHtmlOutput } from '#lib/canvas/canvas-ui.js';
@@ -64,7 +71,8 @@
 		openNotHelpfulFeedback,
 		submitPracticeQuestionResult,
 		conversationId,
-		persistPracticeQuestionAssignment
+		persistPracticeQuestionAssignment,
+		replyToId = $bindable()
 	}: {
 		messages: AgentUIMessage[];
 		streaming: boolean;
@@ -83,6 +91,7 @@
 			toolCallId: string,
 			assignedQuestion: CoachPracticeQuestionOutput
 		) => Promise<boolean>;
+		replyToId?: string;
 	} = $props();
 	function messageFeedback(id: string) {
 		return messageFeedbackById[id];
@@ -363,75 +372,305 @@
 		if (part.type !== 'file') return false;
 		return isCoachTextMediaType(part.mediaType) || resolveCoachTextMediaType(part) !== null;
 	}
+
+	const BIG_RADIUS = 'rounded-[1.25rem]';
+	const HEART = '❤️';
+	const TIME_MARKER_GAP_MS = 60 * 60 * 1000;
+	const reducedMotion =
+		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const entrance = { y: 10, delay: reducedMotion ? 0 : 100, duration: reducedMotion ? 0 : 240 };
+
+	type ReplyQuote = { id: string; role: 'user' | 'assistant'; content: string };
+
+	let reactionsById = $state<Record<string, string[]>>({});
+	let replyQuoteById = $state<Record<string, ReplyQuote>>({});
+	let firstSeenAt = $state<Record<string, number>>({});
+	let pendingQuote = $state<ReplyQuote | null>(null);
+	let lastUserMessageId = $state<string | undefined>(undefined);
+	let messageHighlight: Animation | undefined;
+
+
+	$effect(() => {
+		const currentUserId = messages.findLast((message) => message.role === 'user')?.id;
+		if (currentUserId && currentUserId !== lastUserMessageId && pendingQuote) {
+			replyQuoteById = { ...replyQuoteById, [currentUserId]: pendingQuote };
+			pendingQuote = null;
+			replyToId = undefined;
+		}
+		lastUserMessageId = currentUserId;
+	});
+
+	$effect(() => {
+		if (!replyToId) pendingQuote = null;
+	});
+
+	function messageTimestamp(message: AgentUIMessage): number {
+		const createdAt = (message as { createdAt?: Date }).createdAt;
+		if (createdAt instanceof Date) return createdAt.getTime();
+		const cached = firstSeenAt[message.id];
+		if (cached != null) return cached;
+		const now = Date.now();
+		firstSeenAt[message.id] = now;
+		return now;
+	}
+
+	function formatTimeMarker(ms: number): string {
+		const date = new Date(ms);
+		const today = new Date();
+		const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+		const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+		const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+		const dayDiff = Math.round((startOfToday - startOfDay) / 86_400_000);
+
+		if (dayDiff === 0) return `Today ${time}`;
+		if (dayDiff === 1) return `Yesterday ${time}`;
+		if (dayDiff > 1 && dayDiff < 7) {
+			return `${date.toLocaleDateString(undefined, { weekday: 'long' })} ${time}`;
+		}
+		const datePart = date.toLocaleDateString(undefined, {
+			month: 'short',
+			day: 'numeric',
+			...(date.getFullYear() === today.getFullYear() ? {} : { year: 'numeric' })
+		});
+		return `${datePart} ${time}`;
+	}
+
+	function messageGroupBounds(messageIndex: number): {
+		startsGroup: boolean;
+		endsGroup: boolean;
+		timeMarker: string | null;
+		adjacentReply: boolean;
+		followedByReply: boolean;
+		senderChanged: boolean;
+	} {
+		const message = messages[messageIndex];
+		const prev = messages[messageIndex - 1];
+		const next = messages[messageIndex + 1];
+		const reply = replyQuoteById[message.id];
+		const nextReply = next ? replyQuoteById[next.id] : undefined;
+		const adjacentReply = Boolean(prev && reply?.id === prev.id);
+		const followedByReply = nextReply?.id === message.id;
+		const showTimeMarker =
+			!prev || messageTimestamp(message) - messageTimestamp(prev) >= TIME_MARKER_GAP_MS;
+		return {
+			startsGroup: showTimeMarker || Boolean(reply) || !prev || prev.role !== message.role,
+			endsGroup:
+				followedByReply ||
+				Boolean(nextReply) ||
+				messageIndex === messages.length - 1 ||
+				next?.role !== message.role,
+			timeMarker: showTimeMarker ? formatTimeMarker(messageTimestamp(message)) : null,
+			adjacentReply,
+			followedByReply,
+			senderChanged: Boolean(prev && prev.role !== message.role)
+		};
+	}
+
+	function toggleReaction(messageId: string, emoji: string) {
+		const current = reactionsById[messageId] ?? [];
+		reactionsById = {
+			...reactionsById,
+			[messageId]: current.includes(emoji)
+				? current.filter((item) => item !== emoji)
+				: [...current, emoji]
+		};
+	}
+
+	function startReply(message: AgentUIMessage) {
+		const content = messageText(message);
+		pendingQuote = {
+			id: message.id,
+			role: message.role === 'user' ? 'user' : 'assistant',
+			content
+		};
+		replyToId = message.id;
+		void tick();
+	}
+
+	async function scrollToMessage(id: string) {
+		await tick();
+		const el = document.querySelector(`[data-message-id="${CSS.escape(id)}"]`);
+		if (!(el instanceof HTMLElement)) return;
+		el.scrollIntoView({
+			behavior: reducedMotion ? 'instant' : 'smooth',
+			block: 'center'
+		});
+		messageHighlight?.cancel();
+		messageHighlight = el.animate(
+			[
+				{ outline: '2px solid var(--ring)', outlineOffset: '2px' },
+				{ outline: '2px solid var(--ring)', outlineOffset: '2px', offset: 0.8 },
+				{ outline: '2px solid transparent', outlineOffset: '2px' }
+			],
+			{ duration: 1800, easing: reducedMotion ? 'steps(1, end)' : 'ease-out' }
+		);
+	}
+
+	function bubbleShape(isUser: boolean, startsGroup: boolean, endsGroup: boolean): string {
+		if (isUser) {
+			return cn(
+				BIG_RADIUS,
+				!startsGroup && 'rounded-tr-[0.375rem]',
+				!endsGroup && 'rounded-br-[0.375rem]'
+			);
+		}
+		return cn(
+			BIG_RADIUS,
+			!startsGroup && 'rounded-tl-[0.375rem]',
+			!endsGroup && 'rounded-bl-[0.375rem]'
+		);
+	}
+
+	function bubbleFill(isUser: boolean): string {
+		return isUser ? 'bg-primary! text-primary-foreground!' : 'bg-muted! text-foreground!';
+	}
+
+	function textPartIndices(message: AgentUIMessage): number[] {
+		return message.parts.flatMap((part, index) =>
+			part.type === 'text' && part.text.trim() ? [index] : []
+		);
+	}
 </script>
 
+{#snippet reactionBadge(isUser: boolean, reactions: string[])}
+	{#if reactions.length > 0}
+		<Bubble.Reactions side="bottom" align={isUser ? 'end' : 'start'}>
+			{#each reactions as emoji (emoji)}
+				<span
+					class="inline-block"
+					in:scale={{ duration: 350, start: 0.4, opacity: 0, easing: backOut }}>{emoji}</span
+				>
+			{/each}
+		</Bubble.Reactions>
+	{/if}
+{/snippet}
+
 {#each messages as message, messageIndex (message.id)}
-	<Message.Root
-		from={message.role}
+	{@const groupBounds = messageGroupBounds(messageIndex)}
+	{@const isUser = message.role === 'user'}
+	{@const reactions = reactionsById[message.id] ?? []}
+	{@const reply = replyQuoteById[message.id]}
+	<div
+		data-message-id={message.id}
 		class={cn(
-			'ph-mask-pii max-w-3xl gap-1',
-			message.role === 'assistant' && '@min-[32rem]:relative @min-[32rem]:pl-16'
+			'ph-mask-pii max-w-3xl',
+			groupBounds.senderChanged && !groupBounds.timeMarker && 'pt-2',
+			(reactions.length > 0 || reply || groupBounds.followedByReply) && 'overflow-visible'
 		)}
 	>
-		{#if message.role === 'user'}
-			<Message.Content class="text-md max-w-[min(42rem,88%)] leading-6 whitespace-pre-wrap">
-				{messageText(message)}
-				{#each message.parts as part, partIndex (partIndex)}
-					{#if part.type === 'file' && (part.url.startsWith('/api/coach/images/') || part.url.startsWith('data:image/'))}
-						<img
-							src={part.url}
-							alt="Your attachment"
-							class="mt-2 max-h-72 max-w-full rounded-xl object-contain"
-						/>
-					{:else if isCoachTextFilePart(part)}
-						<span
-							class="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1 text-sm text-muted-foreground"
+		{#if groupBounds.timeMarker}
+			<p class="w-full py-3 text-center text-[11px] leading-4 font-medium text-muted-foreground">
+				{groupBounds.timeMarker}
+			</p>
+		{/if}
+		{#if reply && !groupBounds.adjacentReply}
+			<div
+				class={cn('mb-2 flex', !groupBounds.timeMarker && 'pt-1', reply.role === 'user' && 'justify-end')}
+			>
+				<button
+					type="button"
+					class="max-w-[75%] cursor-pointer rounded-2xl border border-muted-foreground/35 bg-background px-2.5 py-1 text-left text-xs leading-4 text-muted-foreground hover:border-muted-foreground"
+					onclick={() => void scrollToMessage(reply.id)}
+				>
+					<span class="line-clamp-2 wrap-break-word">{reply.content}</span>
+				</button>
+			</div>
+		{/if}
+		<div class="relative">
+			{#if reply}
+				<div
+					aria-hidden="true"
+					class={[
+						'pip-reply-connector',
+						reply.role === 'user' && 'outgoing',
+						groupBounds.adjacentReply && Boolean(groupBounds.timeMarker) && 'across-time',
+						reply.role === message.role && 'same-side'
+					]}
+				></div>
+			{/if}
+			<Message.Root align={isUser ? 'end' : 'start'} class="max-w-3xl">
+				{#if isUser}
+					<Message.Content class="gap-1">
+						<CoachMessageBubbleMenu
+							messageId={message.id}
+							outgoing
+							content={messageText(message)}
+							onReaction={(emoji) => toggleReaction(message.id, emoji)}
 						>
-							<PaperclipIcon class="size-3.5 shrink-0" aria-hidden="true" />
-							<span class="truncate">{part.filename?.trim() || 'Attached file'}</span>
-						</span>
-					{/if}
-				{/each}
-			</Message.Content>
-		{:else}
+							<Bubble.Root variant="default" align="end" class="max-w-full">
+								<div class="relative" in:fly|global={entrance}>
+									<Bubble.Content
+										class={cn(
+											'relative px-3.5 py-2 text-md leading-6 whitespace-pre-wrap',
+											bubbleShape(true, groupBounds.startsGroup, groupBounds.endsGroup),
+											bubbleFill(true)
+										)}
+										ondblclick={() => toggleReaction(message.id, HEART)}
+									>
+										{messageText(message)}
+										{#each message.parts as part, partIndex (partIndex)}
+											{#if part.type === 'file' && (part.url.startsWith('/api/coach/images/') || part.url.startsWith('data:image/'))}
+												<img
+													src={part.url}
+													alt="Your attachment"
+													class="mt-2 max-h-72 max-w-full rounded-xl object-contain"
+												/>
+											{:else if isCoachTextFilePart(part)}
+												<span
+													class="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1 text-sm text-muted-foreground"
+												>
+													<PaperclipIcon class="size-3.5 shrink-0" aria-hidden="true" />
+													<span class="truncate">{part.filename?.trim() || 'Attached file'}</span>
+												</span>
+											{/if}
+										{/each}
+									</Bubble.Content>
+									{@render reactionBadge(true, reactions)}
+								</div>
+							</Bubble.Root>
+						</CoachMessageBubbleMenu>
+					</Message.Content>
+				{:else}
 			{@const activities = getToolActivities(message)}
 			{@const isCurrentAssistant = messageIndex === messages.length - 1}
-			<CoachAvatar
-				state={isCurrentAssistant
-					? isStreamingAnswer(message, messageIndex)
-						? COACH_AVATAR_STATES.waiting
-						: streaming
-							? COACH_AVATAR_STATES.thinking
-							: composerHasText
-								? COACH_AVATAR_STATES.waiting
-								: activities.some((activity) => activity.state === 'error')
-									? COACH_AVATAR_STATES.correction
-									: activities.some((activity) => activity.state === 'running')
-										? COACH_AVATAR_STATES.progress
-										: COACH_AVATAR_STATES.waiting
-					: COACH_AVATAR_STATES.waiting}
-				expression={isCurrentAssistant
-					? streaming || composerHasText
-						? 'attentive'
-						: activities.some((activity) => activity.state === 'error')
-							? 'confused'
-							: activities.some((activity) => activity.state === 'running')
-								? 'curious'
-								: 'neutral'
-					: 'neutral'}
-				montage={isCurrentAssistant
-					? activities.some((activity) => activity.state === 'error')
-						? COACH_AVATAR_MONTAGES.correction
-						: hasCompletedPracticeQuestion(message)
-							? COACH_AVATAR_MONTAGES.success
-							: undefined
-					: undefined}
-				size={48}
-				paused={!isCurrentAssistant}
-				interactive={isCurrentAssistant}
-				label="Pip"
-				class="@min-[32rem]:absolute @min-[32rem]:top-0 @min-[32rem]:left-0"
-			/>
+			<Message.Avatar class="overflow-visible bg-transparent">
+				<CoachAvatar
+					state={isCurrentAssistant
+						? isStreamingAnswer(message, messageIndex)
+							? COACH_AVATAR_STATES.waiting
+							: streaming
+								? COACH_AVATAR_STATES.thinking
+								: composerHasText
+									? COACH_AVATAR_STATES.waiting
+									: activities.some((activity) => activity.state === 'error')
+										? COACH_AVATAR_STATES.correction
+										: activities.some((activity) => activity.state === 'running')
+											? COACH_AVATAR_STATES.progress
+											: COACH_AVATAR_STATES.waiting
+						: COACH_AVATAR_STATES.waiting}
+					expression={isCurrentAssistant
+						? streaming || composerHasText
+							? 'attentive'
+							: activities.some((activity) => activity.state === 'error')
+								? 'confused'
+								: activities.some((activity) => activity.state === 'running')
+									? 'curious'
+									: 'neutral'
+						: 'neutral'}
+					montage={isCurrentAssistant
+						? activities.some((activity) => activity.state === 'error')
+							? COACH_AVATAR_MONTAGES.correction
+							: hasCompletedPracticeQuestion(message)
+								? COACH_AVATAR_MONTAGES.success
+								: undefined
+						: undefined}
+					size={48}
+					paused={!isCurrentAssistant}
+					interactive={isCurrentAssistant}
+					label="Pip"
+				/>
+			</Message.Avatar>
+			<Message.Content>
 			{#each message.parts as part, index (`tool-${message.id}-${index}`)}
 				{@const toolPart = getToolPart(part)}
 				{#if toolPart}
@@ -555,69 +794,128 @@
 					{/if}
 				{/if}
 			{/each}
-			{#each message.parts as part, index (`text-${message.id}-${index}`)}
-				{#if part.type === 'text' && part.text.trim()}
-					<Message.Content class="text-md w-full max-w-3xl min-w-0 leading-7">
-						<RichText
-							text={part.text}
-							blocks
-							citations={messages.slice(0, messageIndex + 1).flatMap(messageCitations)}
-						/>
-					</Message.Content>
-				{/if}
-			{/each}
-			{#if messageText(message)}
-				<Message.Actions
-					class={cn(
-						'mt-0 transition-opacity',
-						messageIndex === messages.length - 1
-							? 'opacity-100'
-							: 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
-					)}
+				{@const textIndices = textPartIndices(message)}
+				<CoachMessageBubbleMenu
+					messageId={message.id}
+					outgoing={false}
+					content={messageText(message)}
+					onReaction={(emoji) => toggleReaction(message.id, emoji)}
+					onReply={() => startReply(message)}
+					extraActions={[
+						{
+							label: 'Regenerate',
+							disabled: streaming,
+							onSelect: () => void regenerateMessage(message.id)
+						}
+					]}
 				>
-					<Message.Action
-						tooltip="Regenerate response"
-						label="Regenerate response"
-						disabled={streaming}
-						onclick={() => void regenerateMessage(message.id)}
+					<div class="relative" in:fly|global={entrance}>
+						{#each message.parts as part, index (`text-${message.id}-${index}`)}
+							{#if part.type === 'text' && part.text.trim()}
+								{@const textIdx = textIndices.indexOf(index)}
+								{@const partStarts = textIdx === 0 ? groupBounds.startsGroup : false}
+								{@const partEnds =
+									textIdx === textIndices.length - 1 ? groupBounds.endsGroup : false}
+								<Bubble.Root variant="muted" align="start" class="max-w-full">
+									<Bubble.Content
+										class={cn(
+											'relative px-3.5 py-2 text-md w-full max-w-3xl min-w-0 leading-7',
+											bubbleShape(false, partStarts, partEnds),
+											bubbleFill(false)
+										)}
+										ondblclick={() => toggleReaction(message.id, HEART)}
+									>
+										<RichText
+											text={part.text}
+											blocks
+											citations={messages.slice(0, messageIndex + 1).flatMap(messageCitations)}
+										/>
+									</Bubble.Content>
+								</Bubble.Root>
+							{/if}
+						{/each}
+						{@render reactionBadge(false, reactions)}
+					</div>
+				</CoachMessageBubbleMenu>
+				{#if messageText(message)}
+					<Message.Footer
+						class={cn(
+							'mt-0 gap-0 transition-opacity',
+							messageIndex === messages.length - 1
+								? 'opacity-100'
+								: 'opacity-0 group-focus-within/message:opacity-100 group-hover/message:opacity-100'
+						)}
 					>
-						<RefreshCwIcon />
-					</Message.Action>
-					<Message.Action
-						tooltip="Copy response"
-						label="Copy response"
-						onclick={() => void copyMessage(message)}
-					>
-						<CopyIcon />
-					</Message.Action>
-					<Message.Action
-						tooltip="Helpful response"
-						label="Helpful response"
-						aria-pressed={messageFeedback(message.id) === 'helpful'}
-						class={cn(messageFeedback(message.id) === 'helpful' && 'bg-muted text-foreground')}
-						onclick={() => toggleMessageFeedback(message.id, 'helpful')}
-					>
-						{#if messageFeedback(message.id) === 'helpful'}
-							<ThumbUpFilledIcon />
-						{:else}
-							<ThumbUpIcon />
-						{/if}
-					</Message.Action>
-					<Message.Action
-						tooltip="Not helpful response"
-						label="Not helpful response"
-						aria-pressed={messageFeedback(message.id) === 'not_helpful'}
-						class={cn(messageFeedback(message.id) === 'not_helpful' && 'bg-muted text-foreground')}
-						onclick={() => openNotHelpfulFeedback(message.id)}
-					>
-						{#if messageFeedback(message.id) === 'not_helpful'}
-							<ThumbDownFilledIcon />
-						{:else}
-							<ThumbDownIcon />
-						{/if}
-					</Message.Action>
-				</Message.Actions>
-			{/if}
+						<Button
+							variant="ghost"
+							size="icon"
+							type="button"
+							class="size-7"
+							disabled={streaming}
+							aria-label="Regenerate response"
+							title="Regenerate response"
+							onclick={() => void regenerateMessage(message.id)}
+						>
+							<RefreshCwIcon />
+							<span class="sr-only">Regenerate response</span>
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							type="button"
+							class="size-7"
+							aria-label="Copy response"
+							title="Copy response"
+							onclick={() => void copyMessage(message)}
+						>
+							<CopyIcon />
+							<span class="sr-only">Copy response</span>
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							type="button"
+							class={cn('size-7', messageFeedback(message.id) === 'helpful' && 'bg-muted text-foreground')}
+							aria-label="Helpful response"
+							title="Helpful response"
+							aria-pressed={messageFeedback(message.id) === 'helpful'}
+							onclick={() => toggleMessageFeedback(message.id, 'helpful')}
+						>
+							{#if messageFeedback(message.id) === 'helpful'}
+								<ThumbUpFilledIcon />
+							{:else}
+								<ThumbUpIcon />
+							{/if}
+							<span class="sr-only">Helpful response</span>
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							type="button"
+							class={cn(
+								'size-7',
+								messageFeedback(message.id) === 'not_helpful' && 'bg-muted text-foreground'
+							)}
+							aria-label="Not helpful response"
+							title="Not helpful response"
+							aria-pressed={messageFeedback(message.id) === 'not_helpful'}
+							onclick={() => openNotHelpfulFeedback(message.id)}
+						>
+							{#if messageFeedback(message.id) === 'not_helpful'}
+								<ThumbDownFilledIcon />
+							{:else}
+								<ThumbDownIcon />
+							{/if}
+							<span class="sr-only">Not helpful response</span>
+						</Button>
+					</Message.Footer>
+				{/if}
+			</Message.Content>
+				{/if}
+			</Message.Root>
+		</div>
+		{#if reactions.length > 0}
+			<div class="h-3" aria-hidden="true"></div>
 		{/if}
-	</Message.Root>
+	</div>
 {/each}

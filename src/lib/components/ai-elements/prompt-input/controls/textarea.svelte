@@ -11,6 +11,7 @@
 		placeholder?: string;
 		value?: string;
 		disabled?: boolean;
+		rows?: number;
 		onchange?: (event: Event) => void;
 	}
 	// indexing
@@ -19,6 +20,7 @@
 		class: className,
 		placeholder = 'What would you like to know?',
 		value = $bindable(''),
+		rows,
 		onchange,
 		...props
 	}: Props = $props();
@@ -138,6 +140,7 @@
 		{onchange}
 		onkeydown={handleKeyDown}
 		{placeholder}
+		{rows}
 		value={controller.textInput.value}
 		{...props}
 	/>
@@ -157,6 +160,7 @@
 		{onchange}
 		onkeydown={handleKeyDown}
 		{placeholder}
+		{rows}
 		bind:value
 		{...props}
 	/>

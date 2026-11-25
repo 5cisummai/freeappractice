@@ -10,7 +10,8 @@
 	import SparklesIcon from '@tabler/icons-svelte/icons/sparkles-filled';
 	import RichText from '#lib/components/content/rich-text.svelte';
 	import FirstUseHint from '#lib/components/onboarding/first-use-hint.svelte';
-	import * as Message from '#lib/components/ai-elements/message/index.js';
+	import * as Message from '#lib/components/ui/message/index.js';
+	import * as Bubble from '#lib/components/ui/bubble/index.js';
 	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
 	import { cn } from '#lib/utils.js';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
@@ -399,27 +400,32 @@
 		{#each tutor.messages as message, i (message.id)}
 			{@const content = messageText(message)}
 			<Message.Root
-				from={message.role}
+				align={message.role === 'user' ? 'end' : 'start'}
 				class={cn(
 					'ph-mask-pii w-full max-w-full min-w-0',
 					message.role === 'user' && 'max-w-[92%]'
 				)}
 			>
-				<Message.Content
-					class={cn(
-						message.role === 'user' && 'text-sm leading-5',
-						message.role === 'assistant' && 'max-w-[95%] text-sm leading-6'
-					)}
-				>
+				<Message.Content>
 					{#if message.role === 'user'}
-						{content}
-					{:else if content}
-						<RichText text={content} blocks />
-					{:else if isStreaming && i === tutor.messages.length - 1}
-						<span class="inline-flex items-center gap-2" role="status" aria-live="polite">
-							<Shimmer as="span" content_length={10}>Thinking…</Shimmer>
-							<span class="sr-only">Tutor is thinking</span>
-						</span>
+						<Bubble.Root variant="secondary" align="end">
+							<Bubble.Content class="text-sm leading-5">
+								{content}
+							</Bubble.Content>
+						</Bubble.Root>
+					{:else}
+						<Bubble.Root variant="ghost">
+							<Bubble.Content class="max-w-[95%] text-sm leading-6">
+								{#if content}
+									<RichText text={content} blocks />
+								{:else if isStreaming && i === tutor.messages.length - 1}
+									<span class="inline-flex items-center gap-2" role="status" aria-live="polite">
+										<Shimmer as="span" content_length={10}>Thinking…</Shimmer>
+										<span class="sr-only">Tutor is thinking</span>
+									</span>
+								{/if}
+							</Bubble.Content>
+						</Bubble.Root>
 					{/if}
 				</Message.Content>
 			</Message.Root>

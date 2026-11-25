@@ -24,7 +24,7 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Conversation from '#lib/components/ai-elements/conversation/index.js';
 
-	import * as Message from '#lib/components/ai-elements/message/index.js';
+	import * as Message from '#lib/components/ui/message/index.js';
 	import * as PromptInput from '#lib/components/ai-elements/prompt-input/index.js';
 	import * as Popover from '#lib/components/ui/popover/index.js';
 
@@ -73,6 +73,7 @@
 	let selectedCoachActionIds = $state<CoachComposerActionId[]>([]);
 	let thinkingMode = $state<CoachThinkingMode>('quick');
 	let composerInputRef = $state<HTMLTextAreaElement | null>(null);
+	let replyToId = $state<string | undefined>(undefined);
 	let loadingConversationId = $state<string | null>(null);
 	let clientReady = $state(false);
 	let conversationLoadRequest = 0;
@@ -153,6 +154,21 @@
 	let streaming = $derived(coach.status === 'submitted' || coach.status === 'streaming');
 	let composerHasText = $derived(input.trim().length > 0);
 	let hasMessages = $derived(coach.messages.length > 0);
+	const replyPreview = $derived.by(() => {
+		if (!replyToId) return null;
+		const message = coach.messages.find((item) => item.id === replyToId);
+		if (!message || (message.role !== 'user' && message.role !== 'assistant')) return null;
+		const content = message.parts
+			.filter((part) => part.type === 'text')
+			.map((part) => part.text)
+			.join('\n')
+			.trim();
+		return { role: message.role, content };
+	});
+
+	$effect(() => {
+		if (replyToId) void tick().then(() => composerInputRef?.focus());
+	});
 	let emptyChat = $derived(!hasMessages);
 	let pendingCoachQuestion = $derived.by(() => {
 		const lastMessage = coach.messages.at(-1);
@@ -651,7 +667,7 @@
 				>
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
-							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 sm:px-8 sm:pt-10"
+							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 [mask-image:linear-gradient(to_bottom,transparent,black_5rem,black_calc(100%_-_5rem),transparent)] sm:px-8 sm:pt-10"
 							aria-live="polite"
 						>
 							<CoachMessages
@@ -666,15 +682,11 @@
 								{submitPracticeQuestionResult}
 								conversationId={conversationId || undefined}
 								{persistPracticeQuestionAssignment}
+								bind:replyToId
 							/>
 							{#if showThinkingIndicator}
-								<Message.Root from="assistant" class="max-w-3xl">
-									<div
-										class="flex items-center"
-										role="status"
-										aria-live="polite"
-										aria-label="Pip is thinking"
-									>
+								<Message.Root align="start" class="max-w-3xl">
+									<Message.Avatar class="overflow-visible bg-transparent">
 										<CoachAvatar
 											state="thinking"
 											expression="attentive"
@@ -683,7 +695,10 @@
 											label="Pip is thinking"
 											class="shrink-0"
 										/>
-									</div>
+									</Message.Avatar>
+									<Message.Content>
+										<Message.Typing />
+									</Message.Content>
 								</Message.Root>
 							{/if}
 						</Conversation.Content>
@@ -747,12 +762,10 @@
 						status={coach.status}
 						{send}
 						onStop={() => void coach.stop()}
+						{replyPreview}
+						onClearReply={() => (replyToId = undefined)}
 					/>
 				{/key}
-
-				<p class="mt-2 text-center text-[11px] text-muted-foreground">
-					Pip is an AI study assistant and can make mistakes.
-				</p>
 
 				{#if emptyChat}
 					<ul

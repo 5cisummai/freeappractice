@@ -32,6 +32,7 @@
 	import { cn } from '#lib/utils.js';
 
 	import { toast } from 'svelte-sonner';
+	import IconX from '@tabler/icons-svelte/icons/x';
 
 	let {
 		input = $bindable(''),
@@ -45,7 +46,9 @@
 		imageInputEnabled,
 		status,
 		send,
-		onStop
+		onStop,
+		replyPreview = null,
+		onClearReply
 	}: {
 		input?: string;
 		attachments?: PromptInput.PromptInputAttachmentData[];
@@ -59,6 +62,8 @@
 		status: ChatStatus;
 		send: (text: string, files?: FileUIPart[]) => Promise<void>;
 		onStop: () => void;
+		replyPreview?: { role: 'user' | 'assistant'; content: string } | null;
+		onClearReply?: () => void;
 	} = $props();
 	let coachActionsOpen = $state(false);
 	let dictating = $state(false);
@@ -140,7 +145,7 @@
 </script>
 
 <PromptInput.Root
-	class="relative flex max-h-[300px] min-h-[80px] flex-col gap-3 rounded-[24px] border border-black/8 bg-card pt-3 pb-2 shadow-xs transition-all dark:border-border"
+	class="w-full max-h-[300px] overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none"
 	onSubmit={({ text, files }) => {
 		if (!dictating) return send(text, files);
 	}}
@@ -151,46 +156,38 @@
 	onError={({ message }) => toast.error(message)}
 	clearOnSubmit={false}
 >
+	{#if replyPreview}
+		<div class="mb-1.5 flex items-center gap-2 px-3">
+			<div class="min-w-0 flex-1">
+				<p class="text-[13px] leading-tight font-semibold text-primary">
+					Replying to {replyPreview.role === 'user' ? 'You' : 'Pip'}
+				</p>
+				<p class="truncate text-[12px] leading-tight text-muted-foreground">
+					{replyPreview.content}
+				</p>
+			</div>
+			<button
+				type="button"
+				class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
+				aria-label="Cancel reply"
+				onclick={() => onClearReply?.()}
+			>
+				<IconX class="size-3.5" />
+			</button>
+		</div>
+	{/if}
 	{#if attachments.length}
-		<PromptInput.Attachments class="px-3">
+		<PromptInput.Attachments class="mb-2 px-1">
 			{#snippet children(attachment)}<PromptInput.Attachment data={attachment} />{/snippet}
 		</PromptInput.Attachments>
 	{/if}
-	<PromptInput.Body class="flex-1 ps-4 pe-2">
-		<div class="flex items-start gap-2">
-			{#each selectedCoachActionIds as actionId (actionId)}
-				{@const action = coachComposerActions.find((item) => item.id === actionId)}
-				{@const Icon = coachActionIcons[actionId]}
-				{#if action}
-					<button
-						type="button"
-						class={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-sm font-medium transition-colors hover:bg-muted ${coachActionColors[actionId]}`}
-						aria-label={`Remove ${action.title}`}
-						onclick={() => removeCoachAction(actionId)}
-					>
-						<Icon class="size-4" aria-hidden="true" />
-						{actionId === 'physics-sim'
-							? 'Simulation'
-							: actionId === 'study-plan'
-								? 'Study Plan'
-								: action.title}
-					</button>
-				{/if}
-			{/each}
-			<PromptInput.Textarea
-				bind:ref={composerInputRef}
-				bind:value={input}
-				placeholder="Ask Pip"
-				disabled={!sessionId || streaming || pendingQuestion || dictating}
-				class="text-md min-h-[32px] min-w-0 flex-1 resize-none overflow-auto px-0 py-0 leading-6 placeholder:text-muted-foreground/70"
-			/>
-		</div>
-	</PromptInput.Body>
-	<PromptInput.Toolbar class="gap-2 px-2 py-0">
-		<PromptInput.Tools class="gap-1.5 [&_button:first-child]:rounded-full">
+	<div
+		class="flex w-full items-end gap-1 rounded-[21px] border border-border bg-background/95 p-1 shadow-none backdrop-blur-md"
+	>
+		<PromptInput.Tools class="shrink-0 gap-0 [&_button:first-child]:rounded-full">
 			<PromptInput.ActionMenu bind:open={coachActionsOpen}>
 				<PromptInput.ActionMenuTrigger
-					class="size-8 rounded-full p-0 text-foreground shadow-none hover:bg-muted"
+					class="size-8 shrink-0 rounded-full p-0 text-foreground shadow-none hover:bg-muted"
 					disabled={!sessionId || streaming}
 					aria-label="Pip actions"
 				/>
@@ -216,7 +213,36 @@
 				</PromptInput.ActionMenuContent>
 			</PromptInput.ActionMenu>
 		</PromptInput.Tools>
-		<div class="flex items-center gap-2">
+		<div class="flex min-w-0 flex-1 items-end gap-1">
+			{#each selectedCoachActionIds as actionId (actionId)}
+				{@const action = coachComposerActions.find((item) => item.id === actionId)}
+				{@const Icon = coachActionIcons[actionId]}
+				{#if action}
+					<button
+						type="button"
+						class={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-sm font-medium transition-colors hover:bg-muted ${coachActionColors[actionId]}`}
+						aria-label={`Remove ${action.title}`}
+						onclick={() => removeCoachAction(actionId)}
+					>
+						<Icon class="size-4" aria-hidden="true" />
+						{actionId === 'physics-sim'
+							? 'Simulation'
+							: actionId === 'study-plan'
+								? 'Study Plan'
+								: action.title}
+					</button>
+				{/if}
+			{/each}
+			<PromptInput.Textarea
+				bind:ref={composerInputRef}
+				bind:value={input}
+				placeholder="Ask Pip"
+				rows={1}
+				disabled={!sessionId || streaming || pendingQuestion || dictating}
+				class="field-sizing-content max-h-32 min-h-0 min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 text-md leading-5 outline-none placeholder:text-muted-foreground/70"
+			/>
+		</div>
+		<div class="flex shrink-0 items-center gap-1">
 			<Select.Root
 				type="single"
 				value={thinkingMode}
@@ -225,13 +251,13 @@
 				}}
 			>
 				<Select.Trigger
-					class="h-8 shrink-0 gap-1 rounded-full border-transparent bg-transparent px-2.5 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
+					class="h-8 shrink-0 gap-1 rounded-full border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
 					disabled={!sessionId || streaming}
 					aria-label="Pip response depth"
 				>
 					{@const Icon = selectedThinkingMode.icon}
 					<Icon class="size-3.5 shrink-0" aria-hidden="true" />
-					<span>{selectedThinkingMode.label}</span>
+					<span class="max-sm:sr-only">{selectedThinkingMode.label}</span>
 				</Select.Trigger>
 				<Select.Content align="end" class="min-w-[10.5rem]">
 					{#each thinkingModeOptions as option (option.value)}
@@ -264,7 +290,7 @@
 				disabled={dictating || (!canSendComposer && !streaming)}
 				{onStop}
 				class={cn(
-					'size-8 rounded-full p-0 shadow-none',
+					'size-8 shrink-0 rounded-full p-0 shadow-none',
 					canSendComposer || streaming
 						? 'bg-foreground text-background hover:bg-foreground/85'
 						: 'border-0 bg-muted text-muted-foreground hover:bg-muted'
@@ -277,5 +303,5 @@
 				{/if}
 			</PromptInput.Submit>
 		</div>
-	</PromptInput.Toolbar>
+	</div>
 </PromptInput.Root>
