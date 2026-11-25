@@ -51,6 +51,7 @@
 		onQuizNext,
 		selectedOption = $bindable<string | null>(null),
 		autoDetectLongQuestion = true,
+		fitTwoColumnContent = false,
 		longQuestionThresholdChars = 450,
 		autoShowExplanation = true,
 		checkLabel = 'Check Answer',
@@ -133,6 +134,18 @@
 	);
 	/** Fullscreen unlimited always uses two columns on desktop; otherwise long/stimulus. */
 	const useTwoColumn = $derived(!isMobile.current && (expanded || effectiveTwoColumn));
+	const scrollPanes = $derived(expanded || !fitTwoColumnContent);
+	const compactSplit = $derived(useTwoColumn);
+	const paneFrameClass = $derived(
+		compactSplit
+			? expanded
+				? '-mx-4 overflow-hidden border-t border-border/70'
+				: '-mx-4 overflow-hidden border-y border-border/70'
+			: 'overflow-hidden rounded-lg border border-border/70'
+	);
+	const paneContentClass = $derived(
+		cn(compactSplit ? 'py-4' : 'px-3 py-4 sm:py-5', scrollPanes && 'h-full overflow-y-auto')
+	);
 	const canUseEliminator = $derived(!core.hasCheckedAnswer);
 	const effectiveEliminatorActive = $derived(canUseEliminator && eliminatorActive);
 
@@ -360,16 +373,24 @@
 					class={cn(expanded && 'flex min-h-0 flex-1 flex-col')}
 				>
 					<Card.Root
+						size={compactSplit ? 'sm' : 'default'}
 						class={cn(
 							expanded
 								? 'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card py-6 shadow-lg ring-1 ring-foreground/10'
 								: isLandingPage
 									? 'relative overflow-visible border-0 bg-transparent pt-6 shadow-none ring-0'
 									: 'relative overflow-visible bg-card pt-6 shadow-xs ring-1 ring-foreground/10',
+							compactSplit && 'data-[size=sm]:py-3',
 							className
 						)}
 					>
-						<Card.Content class={cn('flex flex-col gap-6 pt-0 pb-0', expanded && 'min-h-0 flex-1')}>
+						<Card.Content
+							class={cn(
+								'flex flex-col py-0',
+								compactSplit ? 'gap-3' : 'gap-6',
+								expanded && 'min-h-0 flex-1'
+							)}
+						>
 							<div class="flex shrink-0 items-start justify-between gap-4">
 								<div>
 									<h2 class="mt-0.5 text-xl font-semibold">
@@ -473,14 +494,15 @@
 
 							{#if useTwoColumn && core.currentQuestion?.hasStimulus}
 								<div
-									class={cn(
-										'overflow-hidden rounded-lg border border-border/70',
-										expanded ? 'min-h-0 flex-1' : 'h-88'
-									)}
+									class={cn(paneFrameClass, expanded ? 'min-h-0 flex-1' : scrollPanes && 'h-88')}
 								>
 									<Resizable.PaneGroup direction="horizontal" class="h-full">
-										<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
-											<div class="h-full space-y-3 overflow-y-auto p-4 sm:p-5">
+										<Resizable.Pane
+											defaultSize={compactSplit ? 44 : 50}
+											minSize={28}
+											class="min-w-0"
+										>
+											<div class={cn(paneContentClass, 'space-y-3 pl-4')}>
 												<div class="space-y-4 font-serif text-sm leading-6 text-foreground/90">
 													{#each core.currentQuestion.leftPanel?.content ?? [] as paragraph, i (`l-${i}`)}
 														<AnnotatableRichText
@@ -500,8 +522,18 @@
 											</div>
 										</Resizable.Pane>
 										<Resizable.Handle withHandle />
-										<Resizable.Pane defaultSize={50} minSize={28} class="min-w-0">
-											<div class="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 sm:p-5">
+										<Resizable.Pane
+											defaultSize={compactSplit ? 56 : 50}
+											minSize={28}
+											class="min-w-0"
+										>
+											<div
+												class={cn(
+													paneContentClass,
+													'flex min-h-0 flex-col',
+													compactSplit ? 'gap-2 px-4' : 'gap-4'
+												)}
+											>
 												<div {@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}>
 													{@render promptBody()}
 												</div>
@@ -512,16 +544,17 @@
 								</div>
 							{:else if useTwoColumn}
 								<div
-									class={cn(
-										'overflow-hidden rounded-lg border border-border/70',
-										expanded ? 'min-h-0 flex-1' : 'h-100'
-									)}
+									class={cn(paneFrameClass, expanded ? 'min-h-0 flex-1' : scrollPanes && 'h-100')}
 								>
 									<Resizable.PaneGroup direction="horizontal" class="h-full">
-										<Resizable.Pane defaultSize={56} minSize={35} class="min-w-0">
+										<Resizable.Pane
+											defaultSize={compactSplit ? 44 : 56}
+											minSize={35}
+											class="min-w-0"
+										>
 											<div
 												{@attach observePromptLayout(core.currentQuestion?.prompt ?? '')}
-												class="h-full overflow-y-auto p-4 sm:p-5"
+												class={cn(paneContentClass, compactSplit && 'pl-4')}
 											>
 												{#if core.currentQuestion?.diagramSpec}
 													<div class="mb-4">
@@ -532,8 +565,12 @@
 											</div>
 										</Resizable.Pane>
 										<Resizable.Handle withHandle />
-										<Resizable.Pane defaultSize={44} minSize={30} class="min-w-0">
-											<div class="h-full overflow-y-auto p-4 sm:p-5">
+										<Resizable.Pane
+											defaultSize={compactSplit ? 56 : 44}
+											minSize={30}
+											class="min-w-0"
+										>
+											<div class={cn(paneContentClass, compactSplit && 'px-4')}>
 												{@render mcqChoices(true)}
 											</div>
 										</Resizable.Pane>

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { withAuthedHandler } from '#lib/auth/route-helpers.server.js';
+import { storedQuestionToGenerated } from '#lib/question-bank/mcq/public-payload.server.js';
+import { getQuestionsByIds } from '#lib/question-bank/mcq/repository.server.js';
 import { getExamAttempt, mutateExamAttempt } from '#lib/users/exam-attempts.server.js';
 
 const notFound = () => Response.json({ error: 'Exam attempt not found.' }, { status: 404 });
@@ -15,9 +17,26 @@ export const GET = withAuthedHandler(
 	async (event, userId) => {
 		if (!event.params.id) return notFound();
 		const result = await getExamAttempt(userId, event.params.id);
-		if (result.kind === 'success') return Response.json(result.value);
-		if (result.kind === 'not_found') return notFound();
-		return notFound();
+		if (result.kind !== 'success') return notFound();
+		if (event.url.searchParams.get('questions') !== 'mcq') return Response.json(result.value);
+
+		const { attempt } = result.value;
+		const section = attempt.sections[attempt.sectionIndex];
+		if (attempt.status !== 'in_progress' || section?.kind !== 'mcq') {
+			return Response.json({ error: 'No active multiple-choice section.' }, { status: 409 });
+		}
+		const questions = await getQuestionsByIds(section.items.map((item) => item.questionId));
+		if (questions.length !== section.items.length) {
+			return Response.json({ error: 'Some exam questions are unavailable.' }, { status: 409 });
+		}
+		return Response.json({
+			questions: questions.map((question) => ({
+				...storedQuestionToGenerated(question),
+				correctAnswer: undefined,
+				explanation: undefined,
+				choiceExplanations: undefined
+			}))
+		});
 	},
 	{ logLabel: 'Exam lookup error', errorMessage: 'Failed to load exam' }
 );

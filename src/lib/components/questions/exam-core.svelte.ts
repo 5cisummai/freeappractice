@@ -522,7 +522,11 @@ export function createExamCore(opts: ExamCoreOpts = {}) {
 			return;
 		}
 		const question = questions[index];
-		if (!question?.correctAnswer) return;
+		if (!question) return;
+		if (!question.correctAnswer) {
+			draftSelections[index] = optionId;
+			return;
+		}
 		const currentVisitMs =
 			index === currentIndex && Number.isFinite(enteredQuestionAtMs)
 				? Math.max(0, activeElapsedNow() - enteredQuestionAtMs)

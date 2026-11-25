@@ -9,7 +9,6 @@
 	import { createLazyComponentLoader } from '#lib/client/lazy-component.js';
 	import LazyComponent from '#lib/components/app/lazy-component.svelte';
 	import * as Tabs from '#lib/components/ui/tabs/index.js';
-	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { cn } from '#lib/utils.js';
 	import { unlimitedQuestionCardModel } from '#lib/question-bank/question-card-model.js';
 
@@ -228,9 +227,6 @@
 							<Tabs.Trigger value="frq" aria-label="Free Response">
 								<span class="sm:hidden">FRQ</span>
 								<span class="hidden sm:inline">Free Response</span>
-								<Badge variant="secondary" class="h-5 bg-primary/10 px-1.5 text-[10px] text-primary"
-									>New</Badge
-								>
 							</Tabs.Trigger>
 						{/if}
 					</Tabs.List>

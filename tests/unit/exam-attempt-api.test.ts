@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
 	row: null as unknown,
 	updated: null as unknown,
 	set: vi.fn(),
+	getQuestionsByIds: vi.fn(),
 	publishPersonalPracticeActivity: vi.fn()
 }));
 vi.mock('#lib/auth/route-helpers.server.js', () => ({
@@ -40,7 +41,10 @@ vi.mock('#lib/server/neon/db.js', () => ({
 		})
 	})
 }));
-import { PATCH } from '../../src/routes/api/me/exam-attempts/[id]/+server';
+vi.mock('#lib/question-bank/mcq/repository.server.js', () => ({
+	getQuestionsByIds: mocks.getQuestionsByIds
+}));
+import { GET, PATCH } from '../../src/routes/api/me/exam-attempts/[id]/+server';
 
 const section = {
 	id: 's',
@@ -77,6 +81,24 @@ describe('exam section saves', () => {
 			submittedAt: new Date()
 		};
 		mocks.publishPersonalPracticeActivity.mockResolvedValue(undefined);
+	});
+	it('loads the persisted MCQ batch without answers or explanations', async () => {
+		mocks.getQuestionsByIds.mockResolvedValue([
+			{ id: 'question', question: 'Prompt', correctAnswer: 'A', explanation: 'Answer rationale' }
+		]);
+		const response = await GET({
+			params: { id: 'exam' },
+			locals: { userId: 'user' },
+			url: new URL('http://localhost?questions=mcq')
+		} as never);
+		expect(response.status).toBe(200);
+		expect(mocks.getQuestionsByIds).toHaveBeenCalledWith(['question']);
+		const { questions } = await response.json();
+		expect(questions).toHaveLength(1);
+		expect(questions[0]).toMatchObject({ questionId: 'question', prompt: 'Prompt' });
+		expect(questions[0]).not.toHaveProperty('correctAnswer');
+		expect(questions[0]).not.toHaveProperty('explanation');
+		expect(questions[0]).not.toHaveProperty('choiceExplanations');
 	});
 	it('saves answers for the active section', async () => {
 		const response = await PATCH(event({ action: 'save', revision: 0, responses: { q: 'A' } }));

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import CheckIcon from '@tabler/icons-svelte/icons/check';
+	import InfoIcon from '@tabler/icons-svelte/icons/info-circle';
 	import { apiFetch, getResponseMessage, readJsonOrNull } from '#lib/client/api.js';
 	import type { BugReportContext } from '#lib/question-bank/mcq/types.js';
 	import * as AlertDialog from '#lib/components/ui/alert-dialog/index.js';
@@ -7,6 +9,7 @@
 	import { Label } from '#lib/components/ui/label/index.js';
 	import { NativeSelect } from '#lib/components/ui/native-select/index.js';
 	import { Textarea } from '#lib/components/ui/textarea/index.js';
+	import * as Tooltip from '#lib/components/ui/tooltip/index.js';
 	import {
 		bugReportSchema,
 		type BugReportPayload,
@@ -52,30 +55,20 @@
 	let error = $state('');
 	let fieldErrors = $state<BugReportFieldErrors>({});
 	let form = $state<BugReportForm>(emptyForm());
+	const stepsPlaceholder = '1. Open the question.\n2. Reproduce the issue.\n3. Describe what happened.';
 
 	function emptyForm(): BugReportForm {
 		return { title: '', description: '', steps: '', expected: '', severity: 'medium', email: '' };
 	}
 
-	function formFromContext(ctx: BugReportContext): BugReportForm {
-		const courseLabel = ctx.selectedCourse || selectedCourse || 'practice';
-		const unitLabel = (ctx.selectedUnit ?? selectedUnit ?? '').trim() || 'all-units';
-		const questionLabel = ctx.questionNumber
-			? `Question ${ctx.questionNumber}`
-			: 'the current question';
-
-		return {
-			title: `Bug report: ${questionLabel}`,
-			description: `I found an issue while working through ${questionLabel} in ${courseLabel} / ${unitLabel}.`,
-			steps: '1. Open the question.\n2. Reproduce the issue.\n3. Describe what happened.',
-			expected: 'The question should load and behave normally.',
-			severity: 'medium',
-			email: ''
-		};
-	}
-
 	function resetDialogState() {
-		form = context ? formFromContext(context) : emptyForm();
+		form = emptyForm();
+		if (context) {
+			form.title = context.questionNumber
+				? `Bug report: Question ${context.questionNumber}`
+				: 'Bug report: Current question';
+			form.expected = 'The question should load and behave normally.';
+		}
 		error = '';
 		fieldErrors = {};
 		submitting = false;
@@ -187,18 +180,25 @@
 								</AlertDialog.Description>
 							</div>
 							{#if context}
-								<div
-									class="w-full rounded-lg border border-border/70 bg-muted/40 p-3 text-sm text-muted-foreground"
-								>
-									<p class="font-medium text-foreground">Question context</p>
-									<p>
-										Question {context.questionNumber}{context.selectedCourse
-											? ` in ${context.selectedCourse}`
-											: ''}{context.selectedUnit ? ` – ${context.selectedUnit}` : ''}
-									</p>
-									{#if context.correctAnswer}
-										<p>Correct answer: {context.correctAnswer}</p>
-									{/if}
+								<div class="mb-3 flex w-full items-center gap-1.5 text-sm text-muted-foreground">
+									<CheckIcon class="size-4 text-green-600 dark:text-green-400" aria-hidden="true" />
+									<span>Question context added</span>
+									<Tooltip.Provider>
+										<Tooltip.Root>
+											<Tooltip.Trigger
+												type="button"
+												aria-label="Attached question details"
+												class="inline-flex size-6 items-center justify-center rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+											>
+												<InfoIcon class="size-4" aria-hidden="true" />
+											</Tooltip.Trigger>
+											<Tooltip.Content sideOffset={4}>
+												Question {context.questionNumber}{context.selectedCourse
+													? ` in ${context.selectedCourse}`
+													: ''}{context.selectedUnit ? ` · ${context.selectedUnit}` : ''}
+											</Tooltip.Content>
+										</Tooltip.Root>
+									</Tooltip.Provider>
 								</div>
 							{/if}
 						</AlertDialog.Header>
@@ -209,6 +209,7 @@
 								<Input
 									id="bug-title"
 									bind:value={form.title}
+									placeholder="Summarize the issue"
 									required
 									maxlength={120}
 									aria-invalid={Boolean(fieldErrors.title)}
@@ -223,6 +224,7 @@
 								<Textarea
 									id="bug-description"
 									bind:value={form.description}
+									placeholder="What happened?"
 									required
 									rows={3}
 									class="min-h-20"
@@ -239,7 +241,7 @@
 									id="bug-steps"
 									bind:value={form.steps}
 									rows={3}
-									placeholder="Optional, but helpful"
+									placeholder={stepsPlaceholder}
 									class="min-h-20"
 									aria-invalid={Boolean(fieldErrors.steps)}
 								/>

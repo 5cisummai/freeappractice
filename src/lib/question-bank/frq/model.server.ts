@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, gte, lt, ne, notInArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lt, ne, notInArray, sql } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { frqStoredPoolFilter } from '#lib/question-bank/frq/practice.js';
 import { FrqQuestionSchema, type FrqQuestion } from '#lib/question-bank/frq/types.js';
@@ -109,6 +109,15 @@ export async function findFrqQuestionById(questionId: string): Promise<IFrqQuest
 export async function listFrqQuestions(): Promise<IFrqQuestion[]> {
 	const rows = await getNeonDatabase().select().from(frqQuestions);
 	return rows.map(frqQuestionRow);
+}
+
+export async function getFrqQuestionsLookupMap(questionIds: string[]) {
+	if (!questionIds.length) return new Map<string, FrqQuestion>();
+	const rows = await getNeonDatabase()
+		.select()
+		.from(frqQuestions)
+		.where(inArray(frqQuestions.questionId, questionIds));
+	return new Map(rows.map((row) => [row.questionId, toFrqQuestion(frqQuestionRow(row))]));
 }
 
 /** Resolve a complete FRQ from its canonical Neon rows. */

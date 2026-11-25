@@ -349,7 +349,7 @@ Chem waits until Sunday: one 30-minute FRQ. That's enough.`
 								in:fly={{ y: 8, duration: 220 }}
 							>
 								<div
-									class="ml-auto w-fit max-w-[min(42rem,88%)] rounded-lg bg-secondary px-4 py-3 text-base leading-6 text-foreground"
+									class="ml-auto w-fit max-w-[min(42rem,88%)] rounded-3xl bg-secondary px-4 py-3 text-base leading-6 text-foreground"
 								>
 									{scene.prompt}
 								</div>

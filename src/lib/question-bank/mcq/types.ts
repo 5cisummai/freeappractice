@@ -243,6 +243,7 @@ export type QuestionCardProps = {
 	onOptionSelected?: (selectedOption: string | null) => void;
 	selectedOption?: string | null;
 	autoDetectLongQuestion?: boolean;
+	fitTwoColumnContent?: boolean;
 	longQuestionThresholdChars?: number;
 	autoShowExplanation?: boolean;
 	checkLabel?: string;
