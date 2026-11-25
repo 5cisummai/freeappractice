@@ -182,7 +182,7 @@
 		</PromptInput.Attachments>
 	{/if}
 	<div
-		class="flex w-full items-end gap-1 rounded-[21px] border border-border bg-background/95 p-1 shadow-none backdrop-blur-md"
+		class="flex w-full items-end gap-1 rounded-3xl border border-border bg-background/95 p-1.5 shadow-none backdrop-blur-md"
 	>
 		<PromptInput.Tools class="shrink-0 gap-0 [&_button:first-child]:rounded-full">
 			<PromptInput.ActionMenu bind:open={coachActionsOpen}>
@@ -213,7 +213,7 @@
 				</PromptInput.ActionMenuContent>
 			</PromptInput.ActionMenu>
 		</PromptInput.Tools>
-		<div class="flex min-w-0 flex-1 items-end gap-1">
+		<div class="flex min-h-8 min-w-0 flex-1 items-center gap-1">
 			{#each selectedCoachActionIds as actionId (actionId)}
 				{@const action = coachComposerActions.find((item) => item.id === actionId)}
 				{@const Icon = coachActionIcons[actionId]}
@@ -239,7 +239,7 @@
 				placeholder="Ask Pip"
 				rows={1}
 				disabled={!sessionId || streaming || pendingQuestion || dictating}
-				class="field-sizing-content max-h-32 min-h-0 min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 text-md leading-5 outline-none placeholder:text-muted-foreground/70"
+				class="field-sizing-content max-h-32 min-h-8 min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 text-md leading-5 outline-none placeholder:text-muted-foreground/70"
 			/>
 		</div>
 		<div class="flex shrink-0 items-center gap-1">
@@ -251,7 +251,7 @@
 				}}
 			>
 				<Select.Trigger
-					class="h-8 shrink-0 gap-1 rounded-full border-transparent bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
+					class="h-8 shrink-0 gap-1 rounded-full border-transparent data-[size=default]:h-8 bg-transparent px-2 text-sm text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent dark:hover:bg-muted/50 [&>svg:last-child]:size-3.5 [&>svg:last-child]:opacity-60"
 					disabled={!sessionId || streaming}
 					aria-label="Pip response depth"
 				>
