@@ -45,7 +45,7 @@ import { COACH_TEXT_MAX_BYTES, COACH_TEXT_MAX_CHARS } from '#lib/agent/attachmen
 import {
 	coachImageModelMessages,
 	getOwnedCoachImage,
-	inspectCoachImageTool,
+	inspectCoachImage,
 	cleanupCoachImages,
 	prepareCoachImageParts
 } from '#lib/agent/attachments/images.server.js';
@@ -203,37 +203,20 @@ describe('Coach image history and access', () => {
 		const query = new PgDialect().sqlToQuery(mocks.query as Parameters<PgDialect['sqlToQuery']>[0]);
 		expect(query.params).toEqual([id, 'other-user', 'other-chat']);
 	});
-	it('keeps tool outputs small, hydrates fresh calls, and never hydrates replayed calls', async () => {
+	it('reads only a saved image owned by the student in this conversation', async () => {
 		mocks.rows = [{ id, conversationId: 'chat', messageId: 'msg', store: 's3', pathname: 'path' }];
 		mocks.read.mockResolvedValue(Buffer.from('pixels'));
-		const imageTool = inspectCoachImageTool('user', 'chat');
-		const options = { toolCallId: 'fresh', messages: [], context: {} };
-		const output = (await imageTool.execute!({ imageId: id }, options)) as {
-			imageId: string;
-			available: boolean;
-		};
-		expect(output).toEqual({ imageId: id, available: true });
-		await imageTool.toModelOutput!({ toolCallId: 'old', input: { imageId: id }, output });
-		expect(mocks.read).not.toHaveBeenCalled();
-		const modelOutput = await imageTool.toModelOutput!({
-			toolCallId: 'fresh',
-			input: { imageId: id },
-			output
-		});
-		expect(modelOutput).toMatchObject({
-			type: 'content',
-			value: [{ type: 'image-data', data: 'cGl4ZWxz' }]
+		expect(await inspectCoachImage('user', 'chat', id)).toEqual({
+			imageId: id,
+			available: true,
+			data: 'cGl4ZWxz'
 		});
 	});
-	it('denies inspection when missing or disabled', async () => {
-		const imageTool = inspectCoachImageTool('user', 'chat');
-		expect(
-			await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [], context: {} })
-		).toEqual({ imageId: id, available: false });
+
+	it('does not read bytes for unavailable or disabled images', async () => {
+		expect(await inspectCoachImage('user', 'chat', id)).toEqual({ imageId: id, available: false });
 		mocks.enabled = false;
-		expect(
-			await imageTool.execute!({ imageId: id }, { toolCallId: 'call', messages: [], context: {} })
-		).toEqual({ imageId: id, available: false });
+		expect(await inspectCoachImage('user', 'chat', id)).toEqual({ imageId: id, available: false });
 		expect(mocks.read).not.toHaveBeenCalled();
 	});
 	it('retains deletion records on failure and removes them after a successful retry', async () => {

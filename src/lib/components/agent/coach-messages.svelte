@@ -17,7 +17,7 @@
 	import PaperclipIcon from '@tabler/icons-svelte/icons/paperclip';
 
 	import * as ChainOfThought from '#lib/components/ai-elements/chain-of-thought/index.js';
-	import { Shimmer } from '#lib/components/ai-elements/shimmer/index.js';
+	import * as Dialog from '#lib/components/ui/dialog/index.js';
 
 	import { tick } from 'svelte';
 	import { backOut } from 'svelte/easing';
@@ -46,7 +46,7 @@
 		type CoachPracticeQuestionToolOutput,
 		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
-	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import type { AgentUIMessage } from '#lib/agent/message.js';
 	import { isCoachTextMediaType, resolveCoachTextMediaType } from '#lib/agent/attachments/text.js';
 
 	import { cn } from '#lib/utils.js';
@@ -174,6 +174,8 @@
 		approval?: ToolUIPartApproval;
 	};
 
+	let traceMessageId = $state<string | null>(null);
+
 	type ToolActivity = {
 		key: string;
 		type: string;
@@ -183,7 +185,12 @@
 		sources: { title: string; url: string; hostname: string; faviconUrl: string }[];
 	};
 
-	let activityOpen = $state<Record<string, boolean>>({});
+	function openTrace(messageId: string) {
+		// Defer so the context/dropdown menu can finish closing first.
+		queueMicrotask(() => {
+			traceMessageId = messageId;
+		});
+	}
 
 	function getToolPart(part: unknown): CoachToolPart | null {
 		if (!part || typeof part !== 'object') return null;
@@ -316,31 +323,6 @@
 		});
 	}
 
-	function isStreamingAnswer(message: AgentUIMessage, messageIndex: number): boolean {
-		return (
-			streaming && messageIndex === messages.length - 1 && messageText(message).trim().length > 0
-		);
-	}
-
-	function activitySummary(activities: ToolActivity[]): string {
-		const active = activities.find((activity) => activity.state === 'running');
-		if (active) return active.label;
-		if (activities.some((activity) => activity.state === 'error')) return 'Activity';
-		if (activities.length === 1) return 'Completed 1 step';
-		return `Completed ${activities.length} steps`;
-	}
-
-	function activityStateKey(message: AgentUIMessage): string {
-		return `${message.id}:${messageText(message).trim() ? 'answer' : 'activity'}`;
-	}
-
-	function isActivityOpen(message: AgentUIMessage, messageIndex: number): boolean {
-		return (
-			activityOpen[activityStateKey(message)] ??
-			(streaming && messageIndex === messages.length - 1 && !messageText(message).trim())
-		);
-	}
-
 	function asRecord(value: unknown): Record<string, unknown> {
 		return value && typeof value === 'object' && !Array.isArray(value)
 			? (value as Record<string, unknown>)
@@ -359,12 +341,84 @@
 	const TIME_MARKER_GAP_MS = 60 * 60 * 1000;
 	const reducedMotion =
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const entrance = { y: 10, delay: reducedMotion ? 0 : 100, duration: reducedMotion ? 0 : 240 };
+	const entrance = {
+		y: reducedMotion ? 0 : 10,
+		delay: reducedMotion ? 0 : 100,
+		duration: reducedMotion ? 0 : 240
+	};
 
 	type ReplyQuote = { id: string; role: 'user' | 'assistant'; content: string };
 
 	let reactionsById = $state<Record<string, string[]>>({});
-	let replyQuoteById = $state<Record<string, ReplyQuote>>({});
+	let localQuotes = $state<Record<string, ReplyQuote>>({});
+	let settledAssistant = $state.raw<{ id: string; partCount: number } | undefined>(undefined);
+
+	// A continuation can append to the same message as an earlier reply.
+	$effect.pre(() => {
+		if (streaming) return;
+		const last = messages.at(-1);
+		settledAssistant =
+			last?.role === 'assistant' ? { id: last.id, partCount: last.parts.length } : undefined;
+	});
+
+	const activeAssistantId = $derived(
+		streaming && messages.at(-1)?.role === 'assistant' ? messages.at(-1)?.id : undefined
+	);
+	const displayedMessages = $derived.by(() =>
+		messages.flatMap((message) => {
+			const pending = message.id === activeAssistantId;
+			const partCount = settledAssistant?.id === message.id ? settledAssistant.partCount : 0;
+			const parts = pending
+				? message.parts.filter(
+						(part, index) =>
+							index < partCount ||
+							(part.type === 'text' && part.state === 'done') ||
+							(part.type !== 'text' && part.type !== 'reasoning')
+					)
+				: message.parts;
+			const hasVisibleContent = parts.some(
+				(part) =>
+					(part.type === 'text' && part.text.trim()) || part.type.startsWith('tool-')
+			);
+			if (
+				!hasVisibleContent && (pending || parts.some((part) => part.type === 'data-coach-reaction'))
+			) return [];
+			return [pending ? { ...message, parts } : message];
+		})
+	);
+	const coachReactions = $derived.by(() => {
+		const result: Record<string, string[]> = {};
+		for (const message of messages) {
+			for (const part of message.parts) {
+				if (part.type === 'data-coach-reaction') {
+					const { targetId, emoji } = part.data;
+					(result[targetId] ??= []).push(emoji);
+				}
+			}
+		}
+		return result;
+	});
+	const replyQuoteById = $derived.by(() => {
+		const byId = Object.fromEntries(messages.map((message) => [message.id, message]));
+		const result = { ...localQuotes };
+		for (const message of displayedMessages) {
+			const reply = message.parts.find((part) => part.type === 'data-coach-reply');
+			const target = reply && byId[reply.data.targetId];
+			if (target?.role === 'user') {
+				result[message.id] = {
+					id: target.id,
+					role: 'user',
+					content: messageText(target) || 'Attachment'
+				};
+			}
+		}
+		return result;
+	});
+	const traceActivities = $derived.by(() => {
+		if (!traceMessageId) return [] as ToolActivity[];
+		const message = displayedMessages.find((item) => item.id === traceMessageId);
+		return message ? getToolActivities(message) : [];
+	});
 	// Plain map — written during render for first-seen timestamps; must not be $state.
 	const firstSeenAt = new Map<string, number>();
 	let pendingQuote = $state<ReplyQuote | null>(null);
@@ -374,8 +428,8 @@
 	$effect(() => {
 		const currentUserId = messages.findLast((message) => message.role === 'user')?.id;
 		if (currentUserId && currentUserId !== lastUserMessageId && pendingQuote) {
-			replyQuoteById = {
-				...replyQuoteById,
+			localQuotes = {
+				...localQuotes,
 				[currentUserId]: { id: pendingQuote.id, role: pendingQuote.role, content: pendingQuote.content }
 			};
 			pendingQuote = null;
@@ -432,9 +486,9 @@
 		followedByReply: boolean;
 		senderChanged: boolean;
 	} {
-		const message = messages[messageIndex];
-		const prev = messages[messageIndex - 1];
-		const next = messages[messageIndex + 1];
+		const message = displayedMessages[messageIndex];
+		const prev = displayedMessages[messageIndex - 1];
+		const next = displayedMessages[messageIndex + 1];
 		const reply = replyQuoteById[message.id];
 		const nextReply = next ? replyQuoteById[next.id] : undefined;
 		const adjacentReply = Boolean(prev && reply?.id === prev.id);
@@ -446,7 +500,7 @@
 			endsGroup:
 				followedByReply ||
 				Boolean(nextReply) ||
-				messageIndex === messages.length - 1 ||
+				messageIndex === displayedMessages.length - 1 ||
 				next?.role !== message.role,
 			timeMarker: showTimeMarker ? formatTimeMarker(messageTimestamp(message)) : null,
 			adjacentReply,
@@ -534,10 +588,10 @@
 	{/if}
 {/snippet}
 
-{#each messages as message, messageIndex (message.id)}
+{#each displayedMessages as message, messageIndex (message.id)}
 	{@const groupBounds = messageGroupBounds(messageIndex)}
 	{@const isUser = message.role === 'user'}
-	{@const reactions = reactionsById[message.id] ?? []}
+	{@const reactions = [...new Set([...(reactionsById[message.id] ?? []), ...(coachReactions[message.id] ?? [])])]}
 	{@const reply = replyQuoteById[message.id]}
 	<div
 		data-message-id={message.id}
@@ -621,21 +675,17 @@
 					</Message.Content>
 				{:else}
 			{@const activities = getToolActivities(message)}
-			{@const isCurrentAssistant = messageIndex === messages.length - 1}
+			{@const isCurrentAssistant = messageIndex === displayedMessages.length - 1}
 			<Message.Avatar class="overflow-visible bg-transparent">
 				<CoachAvatar
 					state={isCurrentAssistant
-						? isStreamingAnswer(message, messageIndex)
+						? streaming || composerHasText
 							? COACH_AVATAR_STATES.waiting
-							: streaming
-								? COACH_AVATAR_STATES.thinking
-								: composerHasText
-									? COACH_AVATAR_STATES.waiting
-									: activities.some((activity) => activity.state === 'error')
-										? COACH_AVATAR_STATES.correction
-										: activities.some((activity) => activity.state === 'running')
-											? COACH_AVATAR_STATES.progress
-											: COACH_AVATAR_STATES.waiting
+							: activities.some((activity) => activity.state === 'error')
+								? COACH_AVATAR_STATES.correction
+								: activities.some((activity) => activity.state === 'running')
+									? COACH_AVATAR_STATES.progress
+									: COACH_AVATAR_STATES.waiting
 						: COACH_AVATAR_STATES.waiting}
 					expression={isCurrentAssistant
 						? streaming || composerHasText
@@ -684,81 +734,12 @@
 					{/if}
 				{/if}
 			{/each}
-			{#if activities.length}
-				<ChainOfThought.Root
-					class="mt-3 max-w-3xl"
-					open={isActivityOpen(message, messageIndex)}
-					onOpenChange={(open) => (activityOpen[activityStateKey(message)] = open)}
-				>
-					<ChainOfThought.Header
-						class="rounded-md py-1 font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-					>
-						{#if isCurrentAssistant && activities.some((activity) => activity.state === 'running')}
-							<Shimmer as="span" content_length={activitySummary(activities).length}>
-								{activitySummary(activities)}
-							</Shimmer>
-						{:else}
-							{activitySummary(activities)}
-						{/if}
-					</ChainOfThought.Header>
-					<ChainOfThought.Content class="py-1">
-						{#each activities as activity (activity.key)}
-							<ChainOfThought.Step
-								icon={activity.type === 'reasoning'
-									? StepBrainIcon
-									: (toolActivityIcons[activity.type] ??
-										(activity.type.startsWith('tool-update_') ? StepPencilIcon : StepFallbackIcon))}
-								label={activity.type === 'reasoning' ? undefined : activity.label}
-								status={activity.state === 'running' ? 'active' : 'complete'}
-								class={cn(
-									activity.state === 'running' && 'animate-pulse motion-reduce:animate-none',
-									activity.state === 'error' && 'text-destructive'
-								)}
-							>
-								{#if activity.reasoning}
-									<RichText
-										text={activity.reasoning}
-										blocks
-										class="max-w-2xl text-sm leading-6 text-muted-foreground"
-									/>
-								{/if}
-								{#if activity.sources.length}
-									<ChainOfThought.SearchResults class="flex-wrap gap-1.5">
-										{#each activity.sources as source (source.url)}
-											<ChainOfThought.SearchResult
-												href={source.url}
-												target="_blank"
-												rel="noopener noreferrer"
-												title={source.title}
-												class="max-w-full hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
-											>
-												<img
-													src={source.faviconUrl}
-													alt=""
-													width="14"
-													height="14"
-													loading="lazy"
-													referrerpolicy="no-referrer"
-													class="size-3.5 rounded-sm object-contain"
-													onerror={(event) =>
-														((event.currentTarget as HTMLImageElement).hidden = true)}
-												/>
-												{source.hostname}
-											</ChainOfThought.SearchResult>
-										{/each}
-									</ChainOfThought.SearchResults>
-								{/if}
-							</ChainOfThought.Step>
-						{/each}
-					</ChainOfThought.Content>
-				</ChainOfThought.Root>
-			{/if}
 			{#each message.parts as part, index (`practice-${message.id}-${index}`)}
 				{@const toolPart = getToolPart(part)}
 				{#if toolPart?.type === 'tool-give_practice_question'}
 					{@const practiceQuestionResult = getCoachPracticeQuestionToolOutput(toolPart.output)}
 					{@const assignedQuestion = getCoachPracticeQuestionAssignment(toolPart)}
-					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId}
+					{#if isCoachPracticeQuestionPending(toolPart) && toolPart.toolCallId && (!isCurrentAssistant || !streaming)}
 						<CoachPracticeQuestionCard
 							input={toolPart.input}
 							toolCallId={toolPart.toolCallId}
@@ -784,48 +765,55 @@
 				{/if}
 			{/each}
 				{@const textIndices = textPartIndices(message)}
-				<CoachMessageBubbleMenu
-					messageId={message.id}
-					outgoing={false}
-					content={messageText(message)}
-					onReaction={(emoji) => toggleReaction(message.id, emoji)}
-					onReply={() => startReply(message)}
-					extraActions={[
-						{
-							label: 'Regenerate',
-							disabled: streaming,
-							onSelect: () => void regenerateMessage(message.id)
-						}
-					]}
-				>
-					<div class="relative" in:fly|global={entrance}>
-						{#each message.parts as part, index (`text-${message.id}-${index}`)}
-							{#if part.type === 'text' && part.text.trim()}
-								{@const textIdx = textIndices.indexOf(index)}
-								{@const partStarts = textIdx === 0 ? groupBounds.startsGroup : false}
-								{@const partEnds =
-									textIdx === textIndices.length - 1 ? groupBounds.endsGroup : false}
-								<Bubble.Root variant="muted" align="start" class="max-w-full">
-									<Bubble.Content
-										class={cn(
-											'relative px-3.5 py-2 text-md w-full max-w-3xl min-w-0 leading-7',
-											bubbleShape(false, partStarts, partEnds),
-											bubbleFill(false)
-										)}
-										ondblclick={() => toggleReaction(message.id, HEART)}
-									>
-										<RichText
-											text={part.text}
-											blocks
-											citations={messages.slice(0, messageIndex + 1).flatMap(messageCitations)}
-										/>
-									</Bubble.Content>
-								</Bubble.Root>
-							{/if}
-						{/each}
-						{@render reactionBadge(false, reactions)}
-					</div>
-				</CoachMessageBubbleMenu>
+				{#if textIndices.length}
+					<CoachMessageBubbleMenu
+						messageId={message.id}
+						outgoing={false}
+						content={messageText(message)}
+						onReaction={(emoji) => toggleReaction(message.id, emoji)}
+						onReply={() => startReply(message)}
+						extraActions={[
+							{
+								label: 'Regenerate',
+								disabled: streaming,
+								onSelect: () => void regenerateMessage(message.id)
+							},
+							...(activities.length && (!isCurrentAssistant || !streaming)
+								? [{ label: 'View trace', onSelect: () => openTrace(message.id) }]
+								: [])
+						]}
+					>
+						<div class="relative">
+							{#each message.parts as part, index (`text-${message.id}-${index}`)}
+								{#if part.type === 'text' && part.text.trim()}
+									{@const textIdx = textIndices.indexOf(index)}
+									{@const partStarts = textIdx === 0 ? groupBounds.startsGroup : false}
+									{@const partEnds =
+										textIdx === textIndices.length - 1 ? groupBounds.endsGroup : false}
+									<div in:fly|global={entrance}>
+										<Bubble.Root variant="muted" align="start" class="max-w-full">
+											<Bubble.Content
+												class={cn(
+													'relative px-3.5 py-2 text-md w-full max-w-3xl min-w-0 leading-7',
+													bubbleShape(false, partStarts, partEnds),
+													bubbleFill(false)
+												)}
+												ondblclick={() => toggleReaction(message.id, HEART)}
+											>
+												<RichText
+													text={part.text}
+													blocks
+													citations={displayedMessages.slice(0, messageIndex + 1).flatMap(messageCitations)}
+												/>
+											</Bubble.Content>
+										</Bubble.Root>
+									</div>
+								{/if}
+							{/each}
+							{@render reactionBadge(false, reactions)}
+						</div>
+					</CoachMessageBubbleMenu>
+				{/if}
 			</Message.Content>
 				{/if}
 			</Message.Root>
@@ -835,3 +823,85 @@
 		{/if}
 	</div>
 {/each}
+
+{#if streaming}
+	<div in:fly|global={entrance}>
+		<Message.Root
+			align="start"
+			class={cn('max-w-3xl', activeAssistantId && displayedMessages.at(-1)?.id === activeAssistantId ? 'pl-14' : 'pt-2')}
+		>
+			{#if !activeAssistantId || displayedMessages.at(-1)?.id !== activeAssistantId}
+				<Message.Avatar class="overflow-visible bg-transparent">
+					<CoachAvatar state="idle" expression="attentive" size={48} label="Pip is thinking" />
+				</Message.Avatar>
+			{/if}
+			<Message.Content>
+				<Message.Typing />
+			</Message.Content>
+		</Message.Root>
+	</div>
+{/if}
+
+<Dialog.Root
+	open={traceMessageId !== null}
+	onOpenChange={(open) => {
+		if (!open) traceMessageId = null;
+	}}
+>
+	<Dialog.Content class="max-h-[80dvh] overflow-y-auto sm:max-w-xl">
+		<Dialog.Header>
+			<Dialog.Title>Pip trace</Dialog.Title>
+			<Dialog.Description>Tool activity and reasoning summaries for this response.</Dialog.Description>
+		</Dialog.Header>
+		<div class="py-1">
+			{#each traceActivities as activity (activity.key)}
+				<ChainOfThought.Step
+					icon={activity.type === 'reasoning'
+						? StepBrainIcon
+						: (toolActivityIcons[activity.type] ??
+							(activity.type.startsWith('tool-update_') ? StepPencilIcon : StepFallbackIcon))}
+					label={activity.type === 'reasoning' ? 'Reasoning summary' : activity.label}
+					status={activity.state === 'running' ? 'active' : 'complete'}
+					class={cn(
+						activity.state === 'running' && 'animate-pulse motion-reduce:animate-none',
+						activity.state === 'error' && 'text-destructive'
+					)}
+				>
+					{#if activity.reasoning}
+						<RichText
+							text={activity.reasoning}
+							blocks
+							class="max-w-2xl text-sm leading-6 text-muted-foreground"
+						/>
+					{/if}
+					{#if activity.sources.length}
+						<ChainOfThought.SearchResults class="flex-wrap gap-1.5">
+							{#each activity.sources as source (source.url)}
+								<ChainOfThought.SearchResult
+									href={source.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									title={source.title}
+									class="max-w-full hover:bg-secondary/70 focus-visible:ring-2 focus-visible:ring-ring"
+								>
+									<img
+										src={source.faviconUrl}
+										alt=""
+										width="14"
+										height="14"
+										loading="lazy"
+										referrerpolicy="no-referrer"
+										class="size-3.5 rounded-sm object-contain"
+										onerror={(event) =>
+											((event.currentTarget as HTMLImageElement).hidden = true)}
+									/>
+									{source.hostname}
+								</ChainOfThought.SearchResult>
+							{/each}
+						</ChainOfThought.SearchResults>
+					{/if}
+				</ChainOfThought.Step>
+			{/each}
+		</div>
+	</Dialog.Content>
+</Dialog.Root>

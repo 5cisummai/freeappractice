@@ -1,5 +1,5 @@
 import { MAX_AGENT_MESSAGES, type AgentRequest } from '#lib/agent/request.js';
-import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+import type { AgentUIMessage } from '#lib/agent/message.js';
 import type { ConversationMessage } from './store.server';
 import {
 	shouldIncludeConversationRowForUi,

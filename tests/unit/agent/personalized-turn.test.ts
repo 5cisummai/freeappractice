@@ -108,11 +108,7 @@ describe('personalized turn lifecycle', () => {
 		const turn = await startAgentTurn('user-1', 'subscription');
 		if (turn.kind !== 'available') throw new Error('expected usage');
 
-		expect(await turn.canAffordWebSearch()).toBe(true);
-		turn.recordWebSearch();
-		expect(await turn.canAffordWebSearch()).toBe(true);
-		turn.recordWebSearch();
-		await turn.chargeUsage(usage(0, 0, 0));
+		await turn.chargeUsage(usage(0, 0, 0), 0, 2);
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
 			'user-1',
 			'2026-09',
@@ -131,7 +127,6 @@ describe('personalized turn lifecycle', () => {
 		const turn = await startAgentTurn('user-1', 'subscription');
 		if (turn.kind !== 'available') throw new Error('expected usage');
 
-		expect(await turn.canAffordWebSearch()).toBe(true);
 		await turn.chargeUsage(usage(0, 0, 0));
 		expect(mocks.chargePersonalizedCredits).toHaveBeenCalledWith(
 			'user-1',
@@ -139,23 +134,6 @@ describe('personalized turn lifecycle', () => {
 			0,
 			expect.any(Date)
 		);
-	});
-
-	it('rejects web search when fewer than 0.25 credits remain', async () => {
-		mocks.getPersonalizedUsage.mockResolvedValue({
-			month: '2026-09',
-			used: 199_900,
-			limit: 200_000,
-			remaining: 100
-		});
-		const turn = await startAgentTurn('user-1', 'subscription');
-		if (turn.kind !== 'available') throw new Error('expected usage');
-
-		await expect(turn.canAffordWebSearch()).resolves.toBe(false);
-		await turn.chargeUsage(usage(100, 50, 150));
-		expect(mocks.chargePersonalizedCredits).toHaveBeenCalled();
-		const chargedMilli = mocks.chargePersonalizedCredits.mock.calls[0]?.[2] as number;
-		expect(chargedMilli).toBeLessThan(250);
 	});
 
 	it('allows chargeUsage to retry after a failed charge', async () => {

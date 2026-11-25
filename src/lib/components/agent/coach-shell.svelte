@@ -24,7 +24,6 @@
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Conversation from '#lib/components/ai-elements/conversation/index.js';
 
-	import * as Message from '#lib/components/ui/message/index.js';
 	import * as PromptInput from '#lib/components/ai-elements/prompt-input/index.js';
 	import * as Popover from '#lib/components/ui/popover/index.js';
 
@@ -38,7 +37,7 @@
 		type CoachPracticeQuestionOutput
 	} from '#lib/agent/tools/practice.js';
 	import { persistCoachPracticeQuestionAssignment } from '#lib/agent/tools/practice.client.js';
-	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import type { AgentUIMessage } from '#lib/agent/message.js';
 	import { createAgentTransport } from '#lib/agent/transport.js';
 	import { useCoachPageToolbar } from '#lib/components/agent/coach-context.svelte.js';
 	import {
@@ -232,14 +231,6 @@
 			'No messages yet'
 		);
 	}
-
-	// Only show the floating thinking blob before an assistant message exists.
-	// Once the assistant row is present, its CoachAvatar owns the thinking state.
-	let showThinkingIndicator = $derived.by(() => {
-		if (!streaming) return false;
-		const last = coach.messages.at(-1);
-		return !last || last.role !== 'assistant';
-	});
 
 	onMount(() => {
 		void apiFetch('/api/coach/images')
@@ -616,7 +607,7 @@
 				>
 					<Conversation.Root class="min-h-0 min-w-0 flex-1">
 						<Conversation.Content
-							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 gap-1.5 overflow-y-auto overscroll-contain px-4 pt-8 pb-6 [mask-image:linear-gradient(to_bottom,transparent,black_5rem,black_calc(100%_-_5rem),transparent)] sm:px-8 sm:pt-10"
+							class="@container mx-auto no-scrollbar min-h-0 w-full max-w-3xl flex-1 gap-1.5 overflow-y-auto overscroll-contain px-4 pt-8 pb-12 [mask-image:linear-gradient(to_bottom,transparent,black_5rem)] sm:px-8 sm:pt-10 sm:pb-14"
 							aria-live="polite"
 						>
 							<CoachMessages
@@ -629,23 +620,6 @@
 								{persistPracticeQuestionAssignment}
 								bind:replyToId
 							/>
-							{#if showThinkingIndicator}
-								<Message.Root align="start" class="max-w-3xl">
-									<Message.Avatar class="overflow-visible bg-transparent">
-										<CoachAvatar
-											state="thinking"
-											expression="attentive"
-											size={44}
-											interactive
-											label="Pip is thinking"
-											class="shrink-0"
-										/>
-									</Message.Avatar>
-									<Message.Content>
-										<Message.Typing />
-									</Message.Content>
-								</Message.Root>
-							{/if}
 						</Conversation.Content>
 						<Conversation.ScrollButton aria-label="Scroll to latest message" />
 					</Conversation.Root>
@@ -665,7 +639,7 @@
 					out:fade={{ duration: motionMs * 0.7, easing: cubicOut }}
 				>
 					<CoachAvatar
-						state={streaming ? 'thinking' : 'idle'}
+						state="idle"
 						expression={streaming || composerHasText ? 'attentive' : 'neutral'}
 						size={128}
 						interactive

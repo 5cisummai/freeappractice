@@ -10,7 +10,7 @@
 		type AppFeedbackPayload,
 		type CoachFeedbackChatMessage
 	} from '#lib/schemas/app-feedback.js';
-	import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+	import type { AgentUIMessage } from '#lib/agent/message.js';
 
 	type FeedbackField = keyof AppFeedbackPayload;
 	type FeedbackFieldErrors = Partial<Record<FeedbackField, string>>;

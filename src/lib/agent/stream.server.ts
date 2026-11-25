@@ -1,5 +1,4 @@
 import { scheduleBackgroundTask } from '#lib/server/background-task.server.js';
-import { hasAnalyticsConsent } from '#lib/server/analytics-consent.js';
 import {
 	fallbackConversationTitle,
 	updateAutomaticTitle
@@ -7,15 +6,20 @@ import {
 import { summarizeConversation } from '#lib/agent/conversations/summary.server.js';
 /**
  * Super turn runtime: owns request lifecycle, context assembly, persistence,
- * quota/lock cleanup, and UI streaming around the pure ToolLoopAgent.
+ * quota/lock cleanup, and the Eve-to-Coach chat stream.
  */
-import { consumeStream, createAgentUIStreamResponse, type LanguageModelUsage } from 'ai';
+import {
+	consumeStream,
+	createUIMessageStream,
+	createUIMessageStreamResponse,
+	type LanguageModelUsage,
+	type InferUIMessageChunk
+} from 'ai';
 import type { RequestEvent } from '@sveltejs/kit';
 import {
 	addTutorMemoryExchange,
 	isTutorMemoryAvailable
 } from '#lib/agent/memory/service.server.js';
-import { SIM_MODEL } from '#lib/agent/tools/simulation.server.js';
 import { logger } from '#lib/server/logger.js';
 import { acquireCoachLock, releaseLock, refreshLock } from '#lib/agent/usage/controls.server.js';
 import type { SuperAccessReason } from '#lib/billing/types.js';
@@ -23,10 +27,17 @@ import {
 	addLanguageModelUsage,
 	createEmptyLanguageModelUsage,
 	formatCreditsFromMilli,
-	monthlyCreditLimitMilli,
-	usdFromLanguageModelUsage
+	monthlyCreditLimitMilli
 } from '#lib/agent/usage/credits.js';
-import { createAgent, type AgentUIMessage } from '#lib/agent/agent.server.js';
+import type { AgentUIMessage } from '#lib/agent/message.js';
+import { streamEveTurn } from '#lib/agent/eve-stream.server.js';
+import { closeEveTurn, getEveSearchCount, openEveTurn } from '#lib/agent/eve-turn.server.js';
+import { eveToolNames } from '#lib/agent/eve-tools.server.js';
+import { formatDayInTimeZone } from '#lib/dates/calendar-day.js';
+import {
+	prepareEveContinuation,
+	type CoachInlineTool
+} from '#lib/agent/eve-continuation.server.js';
 import { buildAgentContext } from '#lib/agent/personalization/context.server.js';
 import { getTutorProfileViewForRequest } from '#lib/agent/access.server.js';
 import { startAgentTurn } from '#lib/agent/usage/turn.server.js';
@@ -69,6 +80,9 @@ type ContinuationToolPart = {
 	type?: unknown;
 	state?: unknown;
 	toolCallId?: unknown;
+	input?: unknown;
+	output?: unknown;
+	errorText?: unknown;
 };
 
 function findContinuationToolPart(
@@ -179,6 +193,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 		await releaseLock(lock);
 	};
 	let assistantMessageId: string | undefined;
+	let eveTurnId: string | undefined;
 	let pendingAssistant: ConversationMessage | undefined;
 	let conversationId: string | undefined;
 	try {
@@ -248,6 +263,9 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 		}
 
 		let continuationMessage: AgentUIMessage | undefined;
+		let continuationContext = '';
+		let completedTool: CoachInlineTool | undefined;
+		let continuationChunk: InferUIMessageChunk<AgentUIMessage> | undefined;
 		if (isContinuation) {
 			const clientAssistant = clientMessages.at(-1);
 			const clientToolPart = clientAssistant
@@ -294,6 +312,27 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 					return Response.json({ error: 'That approval is no longer pending.' }, { status: 409 });
 				}
 			}
+			const continued = await prepareEveContinuation({
+				stored: lastAssistant,
+				storedPart: storedToolPart,
+				submitted: clientToolPart,
+				approvedMessage: continuationMessage,
+				event,
+				userId,
+				sessionId,
+				conversationId
+			});
+			if (!continued) {
+				await cleanup();
+				return Response.json(
+					{ error: 'The response does not match the pending Coach card.' },
+					{ status: 409 }
+				);
+			}
+			continuationMessage = continued.message;
+			continuationContext = continued.context;
+			continuationChunk = continued.chunk;
+			completedTool = continued.completedTool;
 			assistantMessageId = lastAssistant.id;
 			pendingAssistant = lastAssistant;
 			await markConversationMessageStreaming(userId, assistantMessageId);
@@ -328,71 +367,94 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 
 		const personalization = await buildAgentContext(userId, lastUserMessage, context, profile);
 		const memoryConsentGiven = Boolean(profile.memoryDisclosureSeenAt);
-		const agent = createAgent({
-			locals: event.locals,
-			userId,
-			allowUserAnalytics: hasAnalyticsConsent(event.request),
+		const eveContext = [
+			`Selected AP courses: ${JSON.stringify(profile.selectedApClasses)}`,
+			`Local date: ${formatDayInTimeZone(new Date(), timeZone)} (${timeZone})`,
+			`Current app context: ${JSON.stringify(context)}`,
+			coachComposerActionInstructions(coachActions ?? []),
+			continuationContext,
+			historySummary ? `Private conversation summary:\n${historySummary}` : '',
+			await coachImageManifest(userId, conversationId),
+			personalization.text
+		]
+			.filter(Boolean)
+			.join('\n\n');
+		eveTurnId = await openEveTurn({
+			sub: userId,
 			sessionId,
-			selectedApClasses: profile.selectedApClasses,
-			timeZone,
-			personalizationContext: personalization.text,
-			historySummary: [historySummary, await coachImageManifest(userId, conversationId)]
-				.filter(Boolean)
-				.join('\n\n'),
-			currentContext: context,
+			accessReason,
 			conversationId,
-			composerActionInstructions: coachComposerActionInstructions(coachActions ?? []),
-			thinkingMode,
-			canAffordWebSearch: personalizedTurn.canAffordWebSearch,
-			recordGenerationUsage: (usage) => {
-				simulationUsd += usdFromLanguageModelUsage(usage, SIM_MODEL);
-			},
-			recordWebSearch: personalizedTurn.recordWebSearch,
-			onGenerationEnd: (usage) => {
-				turnUsage = usage;
-			}
+			context,
+			scopes: [...eveToolNames]
 		});
+		const turnId = eveTurnId;
+		const responseAborted = new AbortController();
+		const abortSignal = AbortSignal.any([
+			event.request.signal,
+			streamTimeout.signal,
+			responseAborted.signal
+		]);
 
 		const markUsageIfNeeded = async (responseMessage: AgentUIMessage) => {
 			const hasBillableOutput = responseMessage.parts.some((part) => {
 				if (part.type === 'text' && 'text' in part && typeof part.text === 'string') {
 					return part.text.trim().length > 0;
 				}
-				return typeof part.type === 'string' && part.type.startsWith('tool-');
+				return part.type.startsWith('tool-') || part.type === 'data-coach-reaction';
 			});
 			if (!hasBillableOutput) return;
 			try {
-				await personalizedTurn.chargeUsage(turnUsage, simulationUsd);
+				const searchCount = await getEveSearchCount(turnId).catch((error) => {
+					logger.warn('Failed to read Eve search metering', {
+						errorType: error instanceof Error ? error.name : 'UnknownError'
+					});
+					return 0;
+				});
+				await personalizedTurn.chargeUsage(turnUsage, simulationUsd, searchCount);
 			} catch (error) {
 				logger.warn('Failed to roll up Super Agent usage', { error });
 			}
 		};
 
 		streamTimeout.signal.throwIfAborted();
-		const response = await createAgentUIStreamResponse({
-			agent,
-			uiMessages: coachImageModelMessages(uiMessages, imageUpload),
-			abortSignal: AbortSignal.any([event.request.signal, streamTimeout.signal]),
-			consumeSseStream: consumeStream,
-			timeout: Math.max(1, deadline - Date.now()),
+		const stream = createUIMessageStream<AgentUIMessage>({
 			originalMessages: uiMessages,
-			onStepEnd: (step) => {
-				turnUsage = addLanguageModelUsage(turnUsage, step.usage);
-				logger.info('Super Agent step finish', {
-					surface,
-					conversationId,
-					stepNumber: step.stepNumber,
-					finishReason: step.finishReason,
-					toolCallNames: step.toolCalls.flatMap((call) => (call ? [call.toolName] : [])),
-					toolResultNames: step.toolResults.flatMap((result) => (result ? [result.toolName] : [])),
-					inputTokens: step.usage.inputTokens,
-					outputTokens: step.usage.outputTokens,
-					totalTokens: step.usage.totalTokens,
-					uiMessageCount: uiMessages.length,
-					modelId: step.model.modelId
-				});
+			generateId: () => assistantMessageId ?? crypto.randomUUID(),
+			execute: async ({ writer }) => {
+				writer.write({ type: 'start' });
+				if (continuationChunk) writer.write(continuationChunk);
+				writer.write({ type: 'start-step' });
+				try {
+					await streamEveTurn({
+						turnId,
+						deadline,
+						context: eveContext,
+						mode: thinkingMode,
+						signal: abortSignal,
+						messages: coachImageModelMessages(uiMessages, imageUpload),
+						continuing: isContinuation,
+						completedTool,
+						writer,
+						onUsage: (usage) => {
+							turnUsage = addLanguageModelUsage(turnUsage, usage);
+						},
+						onSimulationUsage: (usd) => {
+							simulationUsd += usd;
+						}
+					});
+					writer.setOutcome({ status: 'completed' });
+					writer.write({ type: 'finish' });
+				} catch (error) {
+					if (!abortSignal.aborted) throw error;
+					writer.setOutcome({ status: 'aborted' });
+					writer.write({ type: 'abort' });
+				}
 			},
-			onEnd: async ({ responseMessage, isAborted }) => {
+			onEnd: async ({ responseMessage, isAborted, isCancelled, outcome }) => {
+				const aborted = isAborted || isCancelled || abortSignal.aborted;
+				const emptyFailure =
+					outcome.status === 'failed' &&
+					responseMessage.parts.every((part) => part.type === 'step-start');
 				try {
 					await markUsageIfNeeded(responseMessage);
 					const assistantResponse = textFromAgentParts(
@@ -401,9 +463,9 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 					if (assistantMessageId && conversationId) {
 						await finalizeConversationMessage(userId, assistantMessageId, {
 							content: assistantResponse,
-							parts: responseMessage.parts as unknown[],
+							parts: emptyFailure ? [] : (responseMessage.parts as unknown[]),
 							clientMessageId: responseMessage.id,
-							status: isAborted ? 'aborted' : 'complete'
+							status: aborted ? 'aborted' : emptyFailure ? 'error' : 'complete'
 						});
 						if (conversationId) {
 							await linkCoachAuditsToAssistantMessage(
@@ -415,7 +477,8 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 						}
 					}
 					if (
-						!isAborted &&
+						!aborted &&
+						outcome.status === 'completed' &&
 						!isContinuation &&
 						memoryConsentGiven &&
 						(await isTutorMemoryAvailable())
@@ -440,6 +503,7 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 								Math.max(1, Math.min(10_000, deadline + 5_000 - Date.now()))
 							).catch((error) => logger.warn('Conversation summary failed', { error }))
 						);
+					await closeEveTurn(turnId).catch(() => undefined);
 					await cleanup();
 				}
 			},
@@ -449,7 +513,11 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 					errorType: error instanceof Error ? error.name : 'UnknownError'
 				});
 				return 'The personalized AI could not complete that request. Please try again.';
-			},
+			}
+		});
+		const response = createUIMessageStreamResponse({
+			stream,
+			consumeSseStream: consumeStream,
 			headers: {
 				...(imageUpload ? { 'X-Coach-Image-Id': imageUpload.id } : {}),
 				'Cache-Control': 'no-cache',
@@ -470,8 +538,29 @@ export async function createAgentStreamResponse(options: AgentStreamOptions): Pr
 					Math.max(1, Math.min(8_000, deadline - Date.now()))
 				).catch((error) => logger.warn('Conversation title failed', { error }))
 			);
-		return response;
+		if (!response.body) return response;
+		const reader = response.body.getReader();
+		return new Response(
+			new ReadableStream({
+				async pull(controller) {
+					const { done, value } = await reader.read();
+					if (done) {
+						reader.releaseLock();
+						controller.close();
+					} else {
+						controller.enqueue(value);
+					}
+				},
+				async cancel(reason) {
+					responseAborted.abort(reason);
+					await reader.cancel(reason);
+					reader.releaseLock();
+				}
+			}),
+			{ status: response.status, headers: response.headers }
+		);
 	} catch (error) {
+		if (eveTurnId) await closeEveTurn(eveTurnId).catch(() => undefined);
 		if (assistantMessageId) {
 			await finalizeConversationMessage(userId, assistantMessageId, {
 				content: pendingAssistant?.content ?? '',

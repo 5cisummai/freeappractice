@@ -57,7 +57,6 @@ export const variables = defineEnvVars({
 	VERCEL_URL: { schema: optional },
 	VERCEL_BRANCH_URL: { schema: optional },
 	VERCEL_PROJECT_PRODUCTION_URL: { schema: optional },
-	PARALLEL_API_KEY: { schema: optional },
 	COACH_IMAGE_S3_ENDPOINT: { schema: optional },
 	COACH_IMAGE_S3_ACCESS_KEY: { schema: optional },
 	COACH_IMAGE_S3_SECRET_KEY: { schema: optional },

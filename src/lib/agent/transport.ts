@@ -1,6 +1,6 @@
 import { DefaultChatTransport } from 'ai';
 import { apiFetch } from '#lib/client/api.js';
-import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+import type { AgentUIMessage } from '#lib/agent/message.js';
 import {
 	MAX_AGENT_MESSAGES,
 	minimalAgentClientMessages,
@@ -26,7 +26,7 @@ export function createAgentTransport(
 	options: AgentTransportOptions
 ): DefaultChatTransport<AgentUIMessage> {
 	return new DefaultChatTransport<AgentUIMessage>({
-		api: '/api/super/agent',
+		api: '/api/coach',
 		fetch: async (url, init) => {
 			const response = await apiFetch(String(url), init);
 			const responseConversationId = response.headers.get('X-Super-Conversation-Id');

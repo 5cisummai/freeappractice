@@ -91,7 +91,7 @@ export async function getRecentMistakes(
 	}));
 }
 
-function questionText(current: CurrentQuestion | null): string {
+export function coachQuestionText(current: CurrentQuestion | null): string {
 	if (!current) return '';
 	if (current.kind === 'mcq') {
 		const { question } = current;
@@ -102,7 +102,6 @@ function questionText(current: CurrentQuestion | null): string {
 			`B. ${question.optionB}`,
 			`C. ${question.optionC}`,
 			`D. ${question.optionD}`,
-			`Correct answer and explanation are server-owned: ${question.correctAnswer} — ${question.explanation}`,
 			question.topicsCovered ? `Topic: ${question.topicsCovered}` : ''
 		]
 			.filter(Boolean)
@@ -146,12 +145,13 @@ export async function buildAgentContext(
 			: Promise.resolve([])
 	]);
 
+	const safeMistakes = mistakes.filter((mistake) => mistake.questionId !== context?.questionId);
 	const parts = [
 		personalization.context,
 		context?.page ? `Current app page: ${context.page}.` : '',
-		questionText(currentQuestion),
-		mistakes.length
-			? `Recent relevant mistakes:\n${mistakes.map((mistake) => `${mistake.course} ${mistake.unit} ${mistake.questionId} (${mistake.attemptedAt}) topic=${mistake.topic ?? 'unknown'} selected=${mistake.selectedAnswer ?? 'none'}\n${mistake.question ?? ''}\nExplanation: ${mistake.explanation ?? ''}`).join('\n')}`
+		coachQuestionText(currentQuestion),
+		safeMistakes.length
+			? `Recent relevant mistakes:\n${safeMistakes.map((mistake) => `${mistake.course} ${mistake.unit} ${mistake.questionId} (${mistake.attemptedAt}) topic=${mistake.topic ?? 'unknown'} selected=${mistake.selectedAnswer ?? 'none'}\n${mistake.question ?? ''}\nExplanation: ${mistake.explanation ?? ''}`).join('\n')}`
 			: ''
 	].filter(Boolean);
 

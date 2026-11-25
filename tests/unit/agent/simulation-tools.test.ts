@@ -9,8 +9,7 @@ vi.mock('#lib/server/gateway-credentials.server.js', () => ({
 	gatewayModel: () => 'simulation-model'
 }));
 
-import { createAgentTools } from '#lib/agent/tools/index.server.js';
-import type { AgentToolsInput } from '#lib/agent/request.js';
+import { generateCoachSimulation } from '#lib/agent/tools/simulation.server.js';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -19,7 +18,6 @@ describe('dedicated simulation generation', () => {
 		'%s generates sandboxed HTML, forwards cancellation, and records usage',
 		async (name) => {
 			const recordGenerationUsage = vi.fn();
-			const tools = createAgentTools({ recordGenerationUsage } as unknown as AgentToolsInput);
 			const usage = { inputTokens: 100, outputTokens: 200 };
 			mocks.generateText.mockResolvedValue({
 				text: '<!DOCTYPE html><html><head></head><body>Interactive visual</body></html>',
@@ -31,11 +29,9 @@ describe('dedicated simulation generation', () => {
 				title: 'Explore motion',
 				description: 'Show a labeled graph with a speed slider.'
 			};
-			const output = await tools[name].execute!(brief, {
-				toolCallId: 'sim',
-				messages: [],
+			const output = await generateCoachSimulation(name, brief, {
 				abortSignal,
-				context: {}
+				recordGenerationUsage
 			});
 			expect(mocks.generateText).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -49,26 +45,20 @@ describe('dedicated simulation generation', () => {
 			if (!output || !('html' in output)) throw new Error('Expected HTML artifact');
 			expect(output.html).toContain('data-pip-canvas-csp');
 			expect(output.html).toContain('data-pip-canvas-resize');
-			const modelOutput = await tools[name].toModelOutput!({
-				toolCallId: 'sim',
-				input: brief,
-				output
-			});
-			expect(JSON.stringify(modelOutput)).not.toContain('<html>');
 		}
 	);
 
 	it('rejects truncated HTML while recording its usage', async () => {
 		const recordGenerationUsage = vi.fn();
-		const tools = createAgentTools({ recordGenerationUsage } as unknown as AgentToolsInput);
 		mocks.generateText.mockResolvedValue({
 			text: '<!DOCTYPE html><html>',
 			finishReason: 'length',
 			totalUsage: {}
 		});
-		const output = await tools.open_physics_sim.execute!(
+		const output = await generateCoachSimulation(
+			'open_physics_sim',
 			{ title: 'Motion', description: 'Explore motion.' },
-			{ toolCallId: 'sim', messages: [], context: {} }
+			{ recordGenerationUsage }
 		);
 		expect(output).toHaveProperty('error');
 		expect(recordGenerationUsage).toHaveBeenCalledOnce();

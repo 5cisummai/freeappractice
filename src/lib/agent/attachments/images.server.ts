@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull, isNotNull, lte, or, count } from 'drizzle-orm';
-import { tool } from 'ai';
-import { z } from 'zod';
 import { getNeonDatabase } from '#lib/server/neon/db.js';
 import { coachImages } from '#lib/server/neon/schema.js';
 import { isCoachImagesEnabled } from '#lib/flags.js';
@@ -19,7 +17,7 @@ import {
 	type CoachImageStore
 } from '#lib/agent/attachments/storage.server.js';
 import { isCoachTextMediaType, resolveCoachTextMediaType } from '#lib/agent/attachments/text.js';
-import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+import type { AgentUIMessage } from '#lib/agent/message.js';
 
 const COACH_IMAGE_TYPE_SET = new Set<string>(COACH_IMAGE_TYPES);
 
@@ -197,38 +195,13 @@ export function coachImageModelMessages(
 	}));
 }
 
-export function inspectCoachImageTool(userId: string, conversationId?: string) {
-	const freshCalls = new Set<string>();
-	return tool({
-		description:
-			'Inspect an image saved in this chat. Use the image ID from a previous message when its visual details are needed for a follow-up.',
-		inputSchema: z.object({ imageId: z.uuid() }),
-		execute: async ({ imageId }, { toolCallId }) => {
-			if (
-				!conversationId ||
-				!(await isCoachImagesEnabled()) ||
-				!(await getOwnedCoachImage(userId, imageId, conversationId))
-			)
-				return { imageId, available: false };
-			freshCalls.add(toolCallId);
-			return { imageId, available: true };
-		},
-		toModelOutput: async ({ toolCallId, output }) => {
-			// History conversion must never re-fetch every previously inspected image.
-			if (!output.available || !freshCalls.has(toolCallId) || !conversationId)
-				return {
-					type: 'text',
-					value: `Saved image ${output.imageId}; ${output.available ? 'inspect again if needed' : 'unavailable'}.`
-				};
-			const row = await getOwnedCoachImage(userId, output.imageId, conversationId);
-			if (!row) return { type: 'text', value: 'Image unavailable.' };
-			const bytes = await readCoachImage(row.store as CoachImageStore, row.pathname);
-			return {
-				type: 'content',
-				value: [{ type: 'image-data', data: bytes.toString('base64'), mediaType: 'image/webp' }]
-			};
-		}
-	});
+export async function inspectCoachImage(userId: string, conversationId: string, imageId: string) {
+	const row = (await isCoachImagesEnabled())
+		? await getOwnedCoachImage(userId, imageId, conversationId)
+		: null;
+	if (!row) return { imageId, available: false };
+	const bytes = await readCoachImage(row.store as CoachImageStore, row.pathname);
+	return { imageId, available: true, data: bytes.toString('base64') };
 }
 
 export async function cleanupCoachImages(now = new Date(), userId?: string) {

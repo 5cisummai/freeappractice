@@ -36,6 +36,18 @@ describe('minimalAgentClientMessages', () => {
 		expect(minimalAgentClientMessages(messages)).toEqual([messages[1]]);
 	});
 
+	it('does not resume server tools or a card completed in an earlier step', () => {
+		const response = {
+			role: 'assistant' as const,
+			parts: [
+				{ type: 'tool-ask_student', state: 'output-available' },
+				{ type: 'step-start' },
+				{ type: 'tool-read_profile', state: 'output-available', providerExecuted: true }
+			]
+		};
+		expect(isAgentToolContinuation([response])).toBe(false);
+	});
+
 	it('sends only an approval response as a tool continuation', () => {
 		const messages = [
 			{ role: 'user' as const, parts: [{ type: 'text', text: 'Update my goals' }] },

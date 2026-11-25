@@ -1,4 +1,3 @@
-import type { LanguageModelUsage } from 'ai';
 import { z } from 'zod';
 import { coachComposerActionIds } from '#lib/agent/personalization/composer-actions.js';
 
@@ -17,17 +16,6 @@ export type AgentContext = {
 	questionType?: 'mcq' | 'frq';
 	frqAttemptId?: string;
 	quizId?: string;
-};
-
-export type AgentToolsInput = {
-	locals: App.Locals;
-	userId: string;
-	sessionId: string;
-	currentContext?: AgentContext;
-	conversationId?: string;
-	canAffordWebSearch: () => Promise<boolean>;
-	recordWebSearch: () => void;
-	recordGenerationUsage?: (usage: LanguageModelUsage) => void;
 };
 
 export const coachThinkingModeSchema = z.enum(['quick', 'thinking', 'deep']);
@@ -71,9 +59,12 @@ function trimSuperAgentText(text: string): string {
 	return text.slice(0, MAX_AGENT_TEXT_CHARS);
 }
 
-function isToolPart(part: { type?: string; state?: string }): boolean {
-	return typeof part.type === 'string' && part.type.startsWith('tool-');
-}
+const coachContinuationTools = new Set([
+	'tool-ask_student',
+	'tool-give_practice_question',
+	'tool-update_goals',
+	'tool-update_study_plan'
+]);
 
 type SuperAgentClientMessage = {
 	role: 'user' | 'assistant' | 'system';
@@ -99,15 +90,18 @@ export function lastAgentUserText(messages: AgentRequest['messages']): string {
 export function isAgentToolContinuation(messages: SuperAgentClientMessage[]): boolean {
 	const lastMessage = messages.at(-1);
 	if (!lastMessage || lastMessage.role !== 'assistant') return false;
-	return lastMessage.parts.some(
-		(part) =>
-			typeof part === 'object' &&
-			part !== null &&
-			isToolPart(part as { type?: string; state?: string }) &&
-			((part as { state?: string }).state === 'output-available' ||
-				(part as { state?: string }).state === 'output-error' ||
-				(part as { state?: string }).state === 'approval-responded')
+	const lastStep = lastMessage.parts.findLastIndex(
+		(part) => (part as { type?: string } | null)?.type === 'step-start'
 	);
+	return lastMessage.parts.slice(lastStep + 1).some((part) => {
+		if (typeof part !== 'object' || part === null) return false;
+		const { type, state } = part as { type?: string; state?: string };
+		return (
+			typeof type === 'string' &&
+			coachContinuationTools.has(type) &&
+			(state === 'output-available' || state === 'output-error' || state === 'approval-responded')
+		);
+	});
 }
 
 /** Send only the latest user turn or tool continuation; server loads the rest from storage. */

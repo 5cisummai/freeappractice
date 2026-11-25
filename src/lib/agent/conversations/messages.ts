@@ -1,4 +1,4 @@
-import type { AgentUIMessage } from '#lib/agent/agent.server.js';
+import type { AgentUIMessage } from '#lib/agent/message.js';
 import type { ConversationMessage } from '#lib/agent/conversations/store.server.js';
 
 export function shouldIncludeConversationRowForUi(

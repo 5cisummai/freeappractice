@@ -18,11 +18,11 @@ export type AvailableAgentTurn = {
 	kind: 'available';
 	usage: AgentUsage;
 	usageWarning: PersonalizedUsageWarning;
-	chargeUsage: (usage: LanguageModelUsage, additionalUsd?: number) => Promise<void>;
-	/** Returns whether another web search is affordable; does not charge until `recordWebSearch`. */
-	canAffordWebSearch: () => Promise<boolean>;
-	/** Record a successful web search so its surcharge is included in `chargeUsage`. */
-	recordWebSearch: () => void;
+	chargeUsage: (
+		usage: LanguageModelUsage,
+		additionalUsd?: number,
+		successfulSearches?: number
+	) => Promise<void>;
 };
 
 export type AgentTurnStart =
@@ -43,7 +43,6 @@ export async function startAgentTurn(
 	const usage = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
 	if (usage.used >= usage.limit) return { kind: 'exhausted' };
 
-	let webSearchCount = 0;
 	let chargePromise: Promise<void> | null = null;
 	let chargedUsage: number | undefined;
 
@@ -51,11 +50,12 @@ export async function startAgentTurn(
 		kind: 'available',
 		usage,
 		usageWarning: getPersonalizedUsageWarning(usage),
-		chargeUsage: async (turnUsage, additionalUsd = 0) => {
+		chargeUsage: async (turnUsage, additionalUsd = 0, successfulSearches = 0) => {
 			if (chargePromise) return chargePromise;
 			chargePromise = (async () => {
-				let millicredits = millicreditsFromLanguageModelUsage(turnUsage, additionalUsd);
-				if (webSearchCount > 0) millicredits += webSearchCount * WEB_SEARCH_SURCHARGE_MILLI;
+				const millicredits =
+					millicreditsFromLanguageModelUsage(turnUsage, additionalUsd) +
+					successfulSearches * WEB_SEARCH_SURCHARGE_MILLI;
 				const used =
 					chargedUsage ??
 					(await chargePersonalizedCredits(userId, usage.month, millicredits, turnStartedAt));
@@ -73,13 +73,6 @@ export async function startAgentTurn(
 				chargePromise = null;
 				throw error;
 			}
-		},
-		canAffordWebSearch: async () => {
-			const current = await getPersonalizedUsage(userId, accessReason, turnStartedAt);
-			return current.remaining >= (webSearchCount + 1) * WEB_SEARCH_SURCHARGE_MILLI;
-		},
-		recordWebSearch: () => {
-			webSearchCount += 1;
 		}
 	};
 }
